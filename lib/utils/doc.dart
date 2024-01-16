@@ -18,49 +18,15 @@ const globalTransact = transact;
  * @module Y
  */
 
-// import {
-//   StructStore,
-//   AbstractType,
-//   YArray,
-//   YText,
-//   YMap,
-//   YXmlFragment,
-//   transact,
-//   ContentDoc,
-//   Item,
-//   Transaction,
-//   YEvent, // eslint-disable-line
-// } from "../internals.js";
-
-// import { Observable } from "lib0/observable.js";
-// import * as random from "lib0/random.js";
-// import * as map from "lib0/map.js";
-// import * as array from "lib0/array.js";
 
 final _random = math.Random();
 final _uuid = Uuid();
 
 int generateNewClientId() => _random.nextInt(4294967295);
 
-/**
- * @typedef {Object} DocOpts
- * @property {boolean} [DocOpts.gc=true] Disable garbage collection (default: gc=true)
- * @property {function(Item):boolean} [DocOpts.gcFilter] Will be called before an Item is garbage collected. Return false to keep the Item.
- * @property {string} [DocOpts.guid] Define a globally unique identifier for this document
- * @property {any} [DocOpts.meta] Any kind of meta information you want to associate with this document. If this is a subdocument, remote peers will store the meta information as well.
- * @property {boolean} [DocOpts.autoLoad] If a subdocument, automatically load document. If this is a subdocument, remote peers will load the document as well automatically.
- */
-
-/**
- * A Yjs instance handles the state of shared data.
- * @extends Observable<string>
- */
 class Doc extends Observable<String> {
   static bool defaultGcFilter(Item _) => true;
 
-  /**
-   * @param {DocOpts} [opts] configuration
-   */
   Doc({
     String? guid,
     bool? gc,
@@ -79,43 +45,20 @@ class Doc extends Observable<String> {
   late final String guid;
   Object? collectionid;
 
-  /**
-   * @type {Map<string, AbstractType<YEvent>>}
-   */
   final share = <String, AbstractType<YEvent>>{};
   final StructStore store = StructStore();
 
-  /**
-   * @type {Transaction | null}
-   */
   Transaction? transaction;
 
-  /**
-   * @type {List<Transaction>}
-   */
   List<Transaction> transactionCleanups = [];
 
-  /**
-   * @type {Set<Doc>}
-   */
   final subdocs = <Doc>{};
 
-  /**
-   * If this document is a subdocument - a document integrated into another document - then _item is defined.
-   * @type {Item?}
-   */
   Item? item;
   bool shouldLoad;
   final bool autoLoad;
   final dynamic meta;
 
-  /**
-   * Notify the parent document that you request to load data into this subdocument (if it is a subdocument).
-   *
-   * `load()` might be used in the future to request any provider to load the most current data.
-   *
-   * It is safe to call `load()` multiple times.
-   */
   void load() {
     final item = this.item;
     if (item != null && !this.shouldLoad) {
@@ -136,47 +79,10 @@ class Doc extends Observable<String> {
     return this.subdocs.map((doc) => doc.guid).toSet();
   }
 
-  /**
-   * Changes that happen inside of a transaction are bundled. This means that
-   * the observer fires _after_ the transaction is finished and that all changes
-   * that happened inside of the transaction are sent as one message to the
-   * other peers.
-   *
-   * @param {function(Transaction):void} f The function that should be executed as a transaction
-   * @param {any} [origin] Origin of who started the transaction. Will be stored on transaction.origin
-   *
-   * @public
-   */
   void transact(void Function(Transaction transaction) f, [dynamic origin]) {
     globalTransact(this, f, origin);
   }
 
-  /**
-   * Define a shared data type.
-   *
-   * Multiple calls of `y.get(name, TypeConstructor)` yield the same result
-   * and do not overwrite each other. I.e.
-   * `y.define(name, Y.Array) == y.define(name, Y.Array)`
-   *
-   * After this method is called, the type is also available on `y.share.get(name)`.
-   *
-   * *Best Practices:*
-   * Define all types right after the Yjs instance is created and store them in a separate object.
-   * Also use the typed methods `getText(name)`, `getArray(name)`, ..
-   *
-   * @example
-   *   const y = new Y(..)
-   *   const appState = {
-   *     document: y.getText('document')
-   *     comments: y.getArray('comments')
-   *   }
-   *
-   * @param {string} name
-   * @param {Function} TypeConstructor The constructor of the type definition. E.g. Y.Text, Y.Array, Y.Map, ...
-   * @return {AbstractType<any>} The created type. Constructed with TypeConstructor
-   *
-   * @public
-   */
   T get<T extends AbstractType<YEvent>>(
     String name, [
     T Function()? typeConstructor,
@@ -224,61 +130,22 @@ class Doc extends Observable<String> {
     return type as T;
   }
 
-  /**
-   * @template T
-   * @param {string} [name]
-   * @return {YList<T>}
-   *
-   * @public
-   */
   YArray<T> getArray<T>([String name = ""]) {
     // @ts-ignore
     return this.get<YArray<T>>(name, YArray.create) as YArray<T>;
   }
 
-  /**
-   * @param {string} [name]
-   * @return {YText}
-   *
-   * @public
-   */
   YText getText([String name = ""]) {
     // @ts-ignore
     return this.get<YText>(name, YText.create) as YText;
   }
 
-  /**
-   * @param {string} [name]
-   * @return {YMap<any>}
-   *
-   * @public
-   */
   YMap<T> getMap<T>([String name = ""]) {
     // @ts-ignore
     return this.get<YMap<T>>(name, YMap.create) as YMap<T>;
   }
 
-  /**
-   * @param {string} [name]
-   * @return {YXmlFragment}
-   *
-   * @public
-   */
-  // TODO
-  // YXmlFragment getXmlFragment([String name = ""]) {
-  //   // @ts-ignore
-  //   return this.get(name, YXmlFragment.create) as YXmlFragment;
-  // }
-
-  /**
-   * Converts the entire document into a js object, recursively traversing each yjs type
-   *
-   * @return {Object<string, any>}
-   */
   Map<String, dynamic> toJSON() {
-    /**
-     * @type {Object<string, any>}
-     */
     final doc = <String, dynamic>{};
 
     // TODO: use Map.map
@@ -289,13 +156,7 @@ class Doc extends Observable<String> {
     return doc;
   }
 
-  /**
-   * Emit `destroy` event and unregister all event handlers.
-   */
   @override
-  /**
-   * Emit `destroy` event and unregister all event handlers.
-   */
   void destroy() {
     this.subdocs.forEach((subdoc) => subdoc.destroy());
     final item = this.item;
@@ -323,19 +184,11 @@ class Doc extends Observable<String> {
     super.destroy();
   }
 
-  /**
-   * @param {string} eventName
-   * @param {function(...any):any} f
-   */
   @override
   void on(String eventName, void Function(List<dynamic> args) f) {
     super.on(eventName, f);
   }
 
-  /**
-   * @param {string} eventName
-   * @param {function} f
-   */
   @override
   void off(String eventName, void Function(List<dynamic>) f) {
     super.off(eventName, f);

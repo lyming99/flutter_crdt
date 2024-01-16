@@ -16,9 +16,6 @@ import 'delete_set.dart';
 import 'encoding.dart';
 import 'id.dart';
 
-/**
- * @param decoder UpdateDecoderV1 or UpdateDecoderV2
- */
 Iterable<AbstractStruct> lazyStructReaderGenerator(
     AbstractUpdateDecoder decoder) sync* {
   final numOfStateUpdates = decoding.readVarUint(decoder.restDecoder);
@@ -28,17 +25,12 @@ Iterable<AbstractStruct> lazyStructReaderGenerator(
     var clock = decoding.readVarUint(decoder.restDecoder);
     for (var i = 0; i < numberOfStructs; i++) {
       final info = decoder.readInfo();
-      // @todo use switch instead of ifs
       if (info == 10) {
         final len = decoding.readVarUint(decoder.restDecoder);
         yield Skip(createID(client, clock), len);
         clock += len;
       } else if ((binary.BITS5 & info) != 0) {
         final cantCopyParentInfo = (info & (binary.BIT7 | binary.BIT8)) == 0;
-        // If parent = null and neither left nor right are defined, then we know that `parent` is child of `y`
-        // and we read the next string as parentYKey.
-        // It indicates how we store/retrieve parent from `y.share`
-        // @type {string|null}
         final struct = Item(
           createID(client, clock),
           null,
@@ -94,19 +86,10 @@ class LazyStructReader {
   }
 }
 
-/**
- * @param {Uint8Array} update
- *
- */
 void logUpdate(Uint8List update) {
   logUpdateV2(update, UpdateDecoderV1.create(decoding.Decoder(update)));
 }
 
-/**
- * @param update Uint8List
- * @param YDecoder Type<UpdateDecoderV2> | Type<UpdateDecoderV1>
- *
- */
 void logUpdateV2(Uint8List update, AbstractUpdateDecoder updateDecoder) {
   final List<dynamic> structs = [];
   final lazyDecoder = LazyStructReader(updateDecoder, false);
@@ -116,18 +99,9 @@ void logUpdateV2(Uint8List update, AbstractUpdateDecoder updateDecoder) {
   readDeleteSet(updateDecoder);
 }
 
-/**
- * @param {Uint8List} update
- *
- */
 Map<String, dynamic> decodeUpdate(Uint8List update) =>
     decodeUpdateV2(update, (e) => UpdateDecoderV1.create(e));
 
-/**
- * @param update Uint8List
- * @param YDecoder Type<UpdateDecoderV2> | Type<UpdateDecoderV1>
- *
- */
 Map<String, dynamic> decodeUpdateV2(Uint8List update,
     [AbstractUpdateDecoder Function(decoding.Decoder decoder)? updateDecoder]) {
   updateDecoder ??= (e) => UpdateDecoderV2(e);
@@ -150,19 +124,9 @@ class LazyStructWriter {
   LazyStructWriter(this.encoder);
 }
 
-/**
- * @param {List<Uint8List>} updates
- * @return {Uint8List}
- */
 Uint8List mergeUpdates(List<Uint8List> updates) => mergeUpdatesV2(
     updates, (e) => UpdateDecoderV1.create(e), () => UpdateEncoderV1.create());
 
-/**
- * @param update {Uint8List}
- * @param YEncoder {Type<DSEncoderV1> | Type<DSEncoderV2>}
- * @param YDecoder {Type<UpdateDecoderV1> | Type<UpdateDecoderV2>}
- * @return {Uint8List}
- */
 Uint8List encodeStateVectorFromUpdateV2(
   Uint8List update, [
   AbstractDSEncoder Function()? YEncoder,
@@ -273,15 +237,6 @@ AbstractStruct sliceStruct(dynamic left, int diff) {
   }
 }
 
-/**
- *
- * This function works similarly to `readUpdateV2`.
- *
- * @param {List<Uint8List>} updates
- * @param {Type} [yDecoder]
- * @param {Type} [yEncoder]
- * @return {Uint8List}
- */
 Uint8List mergeUpdatesV2(List<Uint8List> updates,
     [AbstractUpdateDecoder Function(decoding.Decoder decoder)? yDecoder,
     AbstractUpdateEncoder Function()? yEncoder]) {
@@ -296,19 +251,10 @@ Uint8List mergeUpdatesV2(List<Uint8List> updates,
   List<LazyStructReader> lazyStructDecoders =
       updateDecoders.map((decoder) => LazyStructReader(decoder, true)).toList();
 
-  /**
-   * @todo we don't need offset because we always slice before
-   * @type {null | { struct: Item | GC | Skip, offset: number }}
-   */
   var currWrite;
   var updateEncoder = yEncoder.call();
-  // write structs lazily
   LazyStructWriter lazyStructEncoder = LazyStructWriter(updateEncoder);
-  // Note: We need to ensure that all lazyStructDecoders are fully consumed
-  // Note: Should merge document updates whenever possible - even from different updates
-  // Note: Should handle that some operations cannot be applied yet ()
   while (true) {
-    // Write higher clients first ⇒ sort by clientID & clock and remove decoders without content
     lazyStructDecoders =
         lazyStructDecoders.where((dec) => dec.curr != null).toList();
     lazyStructDecoders.sort(
@@ -334,16 +280,11 @@ Uint8List mergeUpdatesV2(List<Uint8List> updates,
       break;
     }
     LazyStructReader currDecoder = lazyStructDecoders[0];
-    // write from currDecoder until the next operation is from another client or if filler-struct
-    // then we need to reorder the decoders and find the next operation to write
     int firstClient = currDecoder.curr!.id.client;
 
     if (currWrite != null) {
       var curr = currDecoder.curr;
       bool iterated = false;
-
-      // iterate until we find something that we haven't written already
-      // remember: first the high client-ids are written
       while (curr != null &&
           curr.id.clock + curr.length <=
               currWrite['struct'].id.clock +  currWrite['struct'].length &&
@@ -371,7 +312,6 @@ Uint8List mergeUpdatesV2(List<Uint8List> updates,
       } else {
         if ( currWrite['struct'].id.clock +  currWrite['struct'].length <
             curr.id.clock) {
-          // @todo write currStruct & set currStruct = Skip(clock = currStruct.id.clock + currStruct.length, length = curr.id.clock - self.clock)
           if ( currWrite['struct'].runtimeType == Skip) {
             // extend existing skip
              currWrite['struct'].length =
@@ -382,9 +322,6 @@ Uint8List mergeUpdatesV2(List<Uint8List> updates,
             int diff = curr.id.clock -
                 currWrite['struct'].id.clock -
                 currWrite['struct'].length as int;
-            /**
-             * @type {Skip}
-             */
             Skip struct = Skip(
                 createID(firstClient,
                      currWrite['struct'].id.clock +  currWrite['struct'].length),
@@ -484,9 +421,6 @@ Uint8List diffUpdateV2(Uint8List update, Uint8List sv,
 void diffUpdate(Uint8List update, Uint8List sv) => diffUpdateV2(update, sv,
     (e) => UpdateDecoderV1.create(e), () => UpdateEncoderV1.create());
 
-/**
- * @param lazyWriter {LazyStructWriter}
- */
 void flushLazyStructWriter(LazyStructWriter lazyWriter) {
   if (lazyWriter.written > 0) {
     lazyWriter.clientStructs.add({
@@ -498,11 +432,6 @@ void flushLazyStructWriter(LazyStructWriter lazyWriter) {
   }
 }
 
-/**
- * @param lazyWriter {LazyStructWriter}
- * @param struct {Item | GC}
- * @param offset {int}
- */
 void writeStructToLazyStructWriter(
     LazyStructWriter lazyWriter, dynamic struct, int offset) {
   // flush curr if we start another client
@@ -521,45 +450,20 @@ void writeStructToLazyStructWriter(
   lazyWriter.written++;
 }
 
-/**
- * Call this function when we collected all parts and want to
- * put all the parts together. After calling this method,
- * you can continue using the UpdateEncoder.
- *
- * @param lazyWriter {LazyStructWriter}
- */
 void finishLazyStructWriting(LazyStructWriter lazyWriter) {
   flushLazyStructWriter(lazyWriter);
 
-  // this is a fresh encoder because we called flushCurr
   final restEncoder = lazyWriter.encoder.restEncoder;
 
-  /**
-   * Now we put all the fragments together.
-   * This works similarly to `writeClientsStructs`
-   */
-
-  // write # states that were updated - i.e. the clients
   encoding.writeVarUint(restEncoder, lazyWriter.clientStructs.length);
 
   for (var i = 0; i < lazyWriter.clientStructs.length; i++) {
     final partStructs = lazyWriter.clientStructs[i];
-    /**
-     * Works similarly to `writeStructs`
-     */
-    // write # encoded structs
     encoding.writeVarUint(restEncoder, partStructs['written']);
-    // write the rest of the fragment
     encoding.writeUint8Array(restEncoder, partStructs['restEncoder']);
   }
 }
 
-/**
- * @param update {Uint8List}
- * @param blockTransformer {Function(dynamic): dynamic}
- * @param YDecoder {Type}
- * @param YEncoder {Type}
- */
 Uint8List convertUpdateFormat(
     Uint8List update,
     Function(dynamic) blockTransformer,

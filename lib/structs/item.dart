@@ -316,70 +316,21 @@ class Item extends AbstractStruct {
       : info = content.isCountable() ? binary.BIT2 : 0,
         super(id, content.getLength());
 
-  /**
-   * The item that was originally to the left of this item.
-   * @type {ID | null}
-   */
   ID? origin;
 
-  /**
-   * The item that is currently to the left of this item.
-   * @type {Item | null}
-   */
   Item? left;
 
-  /**
-   * The item that is currently to the right of this item.
-   * @type {Item | null}
-   */
   Item? right;
 
-  /**
-   * The item that was originally to the right of this item.
-   * @type {ID | null}
-   */
   ID? rightOrigin;
-
-  /**
-   * @type {AbstractType<any>|ID|null}
-   */
   Object? parent;
 
-  /**
-   * If the parent refers to this item with some kind of key (e.g. YMap, the
-   * key is specified here. The key is then used to refer to the list in which
-   * to insert this item. If `parentSub = null` type._start is the list in
-   * which to insert to. Otherwise it is `parent._map`.
-   * @type {String | null}
-   */
   String? parentSub;
-
-  /**
-   * If this type's effect is reundone this type refers to the type that undid
-   * this operation.
-   * @type {ID | null}
-   */
   ID? redone;
-
-  /**
-   * @type {AbstractContent}
-   */
   AbstractContent content;
 
-  /**
-   * bit1: keep
-   * bit2: countable
-   * bit3: deleted
-   * bit4: mark - mark node as fast-search-marker
-   * @type {number} byte
-   */
   int info;
 
-  /**
-   * This is used to mark the item as an indexed fast-search marker
-   *
-   * @type {boolean}
-   */
   set marker(bool isMarked) {
     if (((this.info & binary.BIT4) > 0) != isMarked) {
       this.info ^= binary.BIT4;
@@ -390,9 +341,6 @@ class Item extends AbstractStruct {
     return (this.info & binary.BIT4) > 0;
   }
 
-  /**
-   * If true, do not garbage collect this Item.
-   */
   bool get keep {
     return (this.info & binary.BIT1) > 0;
   }
@@ -407,10 +355,6 @@ class Item extends AbstractStruct {
     return (this.info & binary.BIT2) > 0;
   }
 
-  /**
-   * Whether this item was deleted or not.
-   * @type {Boolean}
-   */
   @override
   bool get deleted {
     return (this.info & binary.BIT3) > 0;
@@ -426,13 +370,6 @@ class Item extends AbstractStruct {
     this.info |= binary.BIT3;
   }
 
-  /**
-   * Return the creator clientID of the missing op or define missing items and return null.
-   *
-   * @param {Transaction} transaction
-   * @param {StructStore} store
-   * @return {null | number}
-   */
   int? getMissing(Transaction transaction, StructStore store) {
     final _origin = this.origin;
     if (_origin != null &&
@@ -490,10 +427,6 @@ class Item extends AbstractStruct {
     return null;
   }
 
-  /**
-   * @param {Transaction} transaction
-   * @param {number} offset
-   */
   @override
   void integrate(Transaction transaction, int offset) {
     if (offset > 0) {
@@ -512,42 +445,24 @@ class Item extends AbstractStruct {
       if ((this.left == null &&
           (this.right == null || this.right!.left != null)) ||
           (this.left != null && this.left!.right != this.right)) {
-        /**
-         * @type {Item|null}
-         */
         Item? left = this.left;
-
-        /**
-         * @type {Item|null}
-         */
         Item? o;
         // set o to the first conflicting item
         if (left != null) {
           o = left.right;
         } else if (this.parentSub != null) {
-          o = /** @type {AbstractType<any>} */ (this.parent as AbstractType)
+          o = (this.parent as AbstractType)
               .innerMap
               .get(this.parentSub!);
           while (o != null && o.left != null) {
             o = o.left;
           }
         } else {
-          o = /** @type {AbstractType<any>} */ (this.parent as AbstractType)
+          o = (this.parent as AbstractType)
               .innerStart;
         }
-        // TODO: use something like DeleteSet here (a tree implementation would be best)
-        // @todo use global set definitions
-        /**
-         * @type {Set<Item>}
-         */
         final conflictingItems = <Item>{};
-        /**
-         * @type {Set<Item>}
-         */
         final itemsBeforeOrigin = <Item>{};
-        // var c in conflictingItems, b in itemsBeforeOrigin
-        // ***{origin}bbbb{this}{c,b}{c,b}{o}***
-        // Note that conflictingItems is a subset of itemsBeforeOrigin
         while (o != null && o != this.right) {
           itemsBeforeOrigin.add(o);
           conflictingItems.add(o);
@@ -557,15 +472,11 @@ class Item extends AbstractStruct {
               left = o;
               conflictingItems.clear();
             } else if (compareIDs(this.rightOrigin, o.rightOrigin)) {
-              // this and o are conflicting and point to the same integration points. The id decides which item comes first.
-              // Since this is to the left of o, we can break here
               break;
-            } // else, o might be integrated before an item that this conflicts with. If so, we will find it in the next iterations
+            }
           } else if (o.origin != null &&
               itemsBeforeOrigin
                   .contains(getItem(transaction.doc.store, o.origin!))) {
-            // use getItem instead of getItemCleanEnd because we don't want / need to split items.
-            // case 2
             if (!conflictingItems
                 .contains(getItem(transaction.doc.store, o.origin!))) {
               left = o;
@@ -578,7 +489,6 @@ class Item extends AbstractStruct {
         }
         this.left = left;
       }
-      // reconnect left/right + update parent map/start if necessary
       final _left = this.left;
       if (_left != null) {
         final right = _left.right;
@@ -587,16 +497,15 @@ class Item extends AbstractStruct {
       } else {
         Item? r;
         if (this.parentSub != null) {
-          r = /** @type {AbstractType<any>} */ (this.parent as AbstractType)
+          r = (this.parent as AbstractType)
               .innerMap
               .get(this.parentSub!);
           while (r != null && r.left != null) {
             r = r.left;
           }
         } else {
-          r = /** @type {AbstractType<any>} */ (this.parent as AbstractType)
+          r = (this.parent as AbstractType)
               .innerStart;
-          /** @type {AbstractType<any>} */
           (this.parent as AbstractType).innerStart = this;
         }
         this.right = r;
@@ -604,28 +513,21 @@ class Item extends AbstractStruct {
       if (this.right != null) {
         this.right!.left = this;
       } else if (this.parentSub != null) {
-        // set as current parent value if right == null and this is parentSub
-        /** @type {AbstractType<any>} */
         (this.parent as AbstractType).innerMap.set(this.parentSub!, this);
         if (this.left != null) {
-          // this is the current attribute value of parent. delete right
           this.left!.delete(transaction);
         }
       }
-      // adjust length of parent
       if (this.parentSub == null && this.countable && !this.deleted) {
-        /** @type {AbstractType<any>} */
         (this.parent as AbstractType).innerLength += this.length;
       }
       addStruct(transaction.doc.store, this);
       this.content.integrate(transaction, this);
-      // add parent to transaction.changed
       final _parent = this.parent;
       if (_parent is AbstractType<YEvent>) {
         addChangedTypeToTransaction(transaction, _parent, this.parentSub);
         if ((_parent.innerItem != null && _parent.innerItem!.deleted) ||
             (this.parentSub != null && this.right != null)) {
-          // delete if parent is deleted or if this is not the current attribute value of parent
           this.delete(transaction);
         }
       }
@@ -635,9 +537,6 @@ class Item extends AbstractStruct {
     }
   }
 
-  /**
-   * Returns the next non-deleted item
-   */
   Item? get next {
     var n = this.right;
     while (n != null && n.deleted) {
@@ -646,9 +545,6 @@ class Item extends AbstractStruct {
     return n;
   }
 
-  /**
-   * Returns the previous non-deleted item
-   */
   Item? get prev {
     var n = this.left;
     while (n != null && n.deleted) {
@@ -657,9 +553,6 @@ class Item extends AbstractStruct {
     return n;
   }
 
-  /**
-   * Computes the last content address of this Item.
-   */
   ID get lastId {
     // allocating ids is pretty costly because of the amount of ids created, so we try to reuse whenever possible
     return this.length == 1
@@ -667,12 +560,6 @@ class Item extends AbstractStruct {
         : createID(this.id.client, this.id.clock + this.length - 1);
   }
 
-  /**
-   * Try to merge two items
-   *
-   * @param {Item} right
-   * @return {boolean}
-   */
   @override
   bool mergeWith(AbstractStruct right) {
     if (right is! Item) {
@@ -712,15 +599,9 @@ class Item extends AbstractStruct {
     return false;
   }
 
-  /**
-   * Mark this Item as deleted.
-   *
-   * @param {Transaction} transaction
-   */
   void delete(Transaction transaction) {
     if (!this.deleted) {
-      final parent =
-      /** @type {AbstractType<any>} */ this.parent as AbstractType<YEvent>;
+      final parent = this.parent as AbstractType<YEvent>;
       // adjust the length of parent
       if (this.countable && this.parentSub == null) {
         parent.innerLength -= this.length;
@@ -737,10 +618,6 @@ class Item extends AbstractStruct {
     }
   }
 
-  /**
-   * @param {StructStore} store
-   * @param {boolean} parentGCd
-   */
   void gc(StructStore store, bool parentGCd) {
     if (!this.deleted) {
       throw Exception('Unexpected case');
@@ -753,15 +630,6 @@ class Item extends AbstractStruct {
     }
   }
 
-  /**
-   * Transform the properties of this type to binary and write it to an
-   * BinaryEncoder.
-   *
-   * This is called when this Item is sent to a remote peer.
-   *
-   * @param {AbstractUpdateEncoder} encoder The encoder to write data to.
-   * @param {number} offset
-   */
   @override
   void write(AbstractUpdateEncoder encoder, int offset) {
     final origin = offset > 0
@@ -809,18 +677,9 @@ class Item extends AbstractStruct {
   }
 }
 
-/**
- * @param {AbstractUpdateDecoder} decoder
- * @param {number} info
- */
 dynamic readItemContent(AbstractUpdateDecoder decoder, int info) =>
     contentRefs[info & binary.BITS5](decoder);
 
-/**
- * A lookup map for reading Item content.
- *
- * @type {List<function(AbstractUpdateDecoder):AbstractContent>}
- */
 final contentRefs = [
       () {
     throw Exception('Unexpected case');
@@ -836,72 +695,26 @@ final contentRefs = [
   readContentDoc // 9
 ];
 
-/**
- * Do not implement this class!
- */
 abstract class AbstractContent {
-  /**
-   * @return {number}
-   */
   int getLength();
 
-  /**
-   * @return {List<any>}
-   */
   List getContent();
 
-  /**
-   * Should return false if this Item is some kind of meta information
-   * (e.g. format information).
-   *
-   * * Whether this Item should be addressable via `yarray.get(i)`
-   * * Whether this Item should be counted when computing yarray.length
-   *
-   * @return {boolean}
-   */
   bool isCountable();
 
-  /**
-   * @return {AbstractContent}
-   */
   AbstractContent copy();
 
-  /**
-   * @param {number} offset
-   * @return {AbstractContent}
-   */
   AbstractContent splice(int offset);
 
-  /**
-   * @param {AbstractContent} right
-   * @return {boolean}
-   */
   bool mergeWith(AbstractContent right);
 
-  /**
-   * @param {Transaction} transaction
-   * @param {Item} item
-   */
   void integrate(Transaction transaction, Item item);
 
-  /**
-   * @param {Transaction} transaction
-   */
   void delete(Transaction transaction);
 
-  /**
-   * @param {StructStore} store
-   */
   void gc(StructStore store);
 
-  /**
-   * @param {AbstractUpdateEncoder} encoder
-   * @param {number} offset
-   */
   void write(AbstractUpdateEncoder encoder, int offset);
 
-  /**
-   * @return {number}
-   */
   int getRef();
 }

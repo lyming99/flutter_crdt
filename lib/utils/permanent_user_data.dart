@@ -1,22 +1,3 @@
-// import {
-//   YArray,
-//   YMap,
-//   readDeleteSet,
-//   writeDeleteSet,
-//   createDeleteSet,
-//   DSEncoderV1,
-//   DSDecoderV1,
-//   ID,
-//   DeleteSet,
-//   YArrayEvent,
-//   Transaction,
-//   Doc, // eslint-disable-line
-// } from "../internals.js";
-
-// import * as decoding from "lib0/decoding.js";
-
-// import { mergeDeleteSets, isDeleted } from "./DeleteSet.js";
-
 import 'dart:typed_data';
 
 import 'package:flutter_crdt/lib0/decoding.dart' as decoding;
@@ -33,27 +14,15 @@ import 'package:flutter_crdt/y_crdt_base.dart';
 bool _defaultFilter(_, __) => true;
 
 class PermanentUserData {
-  /**
-   * @param {Doc} doc
-   * @param {YMap<any>} [storeType]
-   */
   PermanentUserData(this.doc, [YMap<YMap<dynamic>>? storeType]) {
     this.yusers = storeType ?? doc.getMap<YMap<dynamic>>("users");
 
-    /**
-     * @param {YMap<any>} user
-     * @param {string} userDescription
-     */
     void initUser(YMap<dynamic> user, String userDescription, YMap<dynamic> _) {
-      /**
-       * @type {YList<Uint8Array>}
-       */
       final ds = user.get("ds")! as YArray;
       final ids = user.get("ids")! as YArray;
       final addClientId =
           (int clientid) => this.clients.set(clientid, userDescription);
-      ds.observe(
-          /** @param {YArrayEvent<any>} event */ (event, _) {
+      ds.observe((event, _) {
         event.changes.added.forEach((item) {
           item.content.getContent().forEach((encodedDs) {
             if (encodedDs is Uint8List) {
@@ -79,8 +48,7 @@ class PermanentUserData {
                 )
                 .toList()),
           );
-      ids.observe(
-        /** @param {YArrayEvent<any>} event */ (event, _) =>
+      ids.observe((event, _) =>
             event.changes.added.forEach(
           (item) => item.content.getContent().cast<int>().forEach(addClientId),
         ),
@@ -102,25 +70,10 @@ class PermanentUserData {
 
   final Doc doc;
   late final YMap<YMap<dynamic>> yusers;
-  /**
-   * Maps from clientid to userDescription
-   *
-   * @type {Map<number,string>}
-   */
   final clients = <int, String>{};
 
-  /**
-     * @type {Map<string,DeleteSet>}
-     */
   final dss = <String, DeleteSet>{};
 
-  /**
-   * @param {Doc} doc
-   * @param {number} clientid
-   * @param {string} userDescription
-   * @param {Object} [conf]
-   * @param {function(Transaction, DeleteSet):boolean} [conf.filter]
-   */
   void setUserMapping(
     Doc doc,
     int clientid,
@@ -158,8 +111,7 @@ class PermanentUserData {
         }
       });
     });
-    doc.on("afterTransaction",
-        /** @param {Transaction} transaction */ (params) {
+    doc.on("afterTransaction",(params) {
       final transaction = params[0] as Transaction;
       Future.delayed(Duration.zero, () {
         final yds = user!.get("ds") as YArray<Uint8List>;
@@ -175,18 +127,10 @@ class PermanentUserData {
     });
   }
 
-  /**
-   * @param {number} clientid
-   * @return {any}
-   */
   String? getUserByClientId(int clientid) {
     return this.clients.get(clientid);
   }
 
-  /**
-   * @param {ID} id
-   * @return {string | null}
-   */
   String? getUserByDeletedId(ID id) {
     for (final entry in this.dss.entries) {
       if (isDeleted(entry.value, id)) {

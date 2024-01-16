@@ -1,15 +1,3 @@
-// import {
-//   GC,
-//   splitItem,
-//   Transaction,
-//   ID,
-//   Item,
-//   DSDecoderV2, // eslint-disable-line
-// } from "../internals.js";
-
-// import * as math from "lib0/math.js";
-// import * as error from "lib0/error.js";
-
 import 'dart:typed_data';
 
 import 'package:flutter_crdt/structs/abstract_struct.dart';
@@ -17,35 +5,16 @@ import 'package:flutter_crdt/structs/gc.dart';
 import 'package:flutter_crdt/structs/item.dart';
 import 'package:flutter_crdt/utils/id.dart';
 import 'package:flutter_crdt/utils/transaction.dart';
-import 'package:flutter_crdt/utils/update_decoder.dart';
 import 'package:flutter_crdt/y_crdt_base.dart';
 
-
 class StructStore {
-  /**
-   * @type {Map<number,Array<GC|Item>>}
-   */
   final clients = <int, List<AbstractStruct>>{};
-  /**
-   * @type {null | { missing: Map<number, number>, update: Uint8Array }}
-   */
+
   Map? pendingStructs;
-  /**
-   * @type {null | Uint8Array}
-   */
+
   Uint8List? pendingDs;
 }
 
-/**
- * Return the states as a Map<client,clock>.
- * Note that clock refers to the next expected clock id.
- *
- * @param {StructStore} store
- * @return {Map<number,number>}
- *
- * @public
- * @function
- */
 Map<int, int> getStateVector(StructStore store) {
   final sm = <int, int>{};
   store.clients.forEach((client, structs) {
@@ -55,14 +24,6 @@ Map<int, int> getStateVector(StructStore store) {
   return sm;
 }
 
-/**
- * @param {StructStore} store
- * @param {number} client
- * @return {number}
- *
- * @public
- * @function
- */
 int getState(StructStore store, int client) {
   final structs = store.clients.get(client);
   if (structs == null) {
@@ -72,12 +33,6 @@ int getState(StructStore store, int client) {
   return lastStruct.id.clock + lastStruct.length;
 }
 
-/**
- * @param {StructStore} store
- *
- * @private
- * @function
- */
 void integretyCheck(StructStore store) {
   store.clients.values.forEach((structs) {
     for (var i = 1; i < structs.length; i++) {
@@ -90,13 +45,6 @@ void integretyCheck(StructStore store) {
   });
 }
 
-/**
- * @param {StructStore} store
- * @param {GC|Item} struct
- *
- * @private
- * @function
- */
 void addStruct(StructStore store, AbstractStruct struct) {
   var structs = store.clients.get(struct.id.client);
   if (structs == null) {
@@ -111,15 +59,6 @@ void addStruct(StructStore store, AbstractStruct struct) {
   structs.add(struct);
 }
 
-/**
- * Perform a binary search on a sorted array
- * @param {List<Item|GC>} structs
- * @param {number} clock
- * @return {number}
- *
- * @private
- * @function
- */
 int findIndexSS(List<AbstractStruct> structs, int clock) {
   var left = 0;
   var right = structs.length - 1;
@@ -128,9 +67,6 @@ int findIndexSS(List<AbstractStruct> structs, int clock) {
   if (midclock == clock) {
     return right;
   }
-  // @todo does it even make sense to pivot the search?
-  // If a good split misses, it might actually increase the time to find the correct item.
-  // Currently, the only advantage is that search with pivoting might find the item on the first try.
   var midindex = ((clock / (midclock + mid.length - 1)) * right)
       .floor(); // pivoting the search
   while (left <= right) {
@@ -146,42 +82,16 @@ int findIndexSS(List<AbstractStruct> structs, int clock) {
     }
     midindex = ((left + right) / 2).floor();
   }
-  // Always check state before looking for a struct in StructStore
-  // Therefore the case of not finding a struct is unexpected
   throw Exception('Unexpected case');
 }
 
-/**
- * Expects that id is actually in store. This function throws or is an infinite loop otherwise.
- *
- * @param {StructStore} store
- * @param {ID} id
- * @return {GC|Item}
- *
- * @private
- * @function
- */
 AbstractStruct find(StructStore store, ID id) {
-  /**
-   * @type {List<GC|Item>}
-   */
-  // @ts-ignore
   final structs = store.clients.get(id.client)!;
   return structs[findIndexSS(structs, id.clock)];
 }
 
-/**
- * Expects that id is actually in store. This function throws or is an infinite loop otherwise.
- * @private
- * @function
- */
-const getItem = /** @type {function(StructStore,ID):Item} */ find;
+const getItem = find;
 
-/**
- * @param {Transaction} transaction
- * @param {List<Item|GC>} structs
- * @param {number} clock
- */
 int findIndexCleanStart(
     Transaction transaction, List<AbstractStruct> structs, int clock) {
   final index = findIndexSS(structs, clock);
@@ -194,40 +104,17 @@ int findIndexCleanStart(
   return index;
 }
 
-/**
- * Expects that id is actually in store. This function throws or is an infinite loop otherwise.
- *
- * @param {Transaction} transaction
- * @param {ID} id
- * @return {Item}
- *
- * @private
- * @function
- */
 Item getItemCleanStart(Transaction transaction, ID id) {
-  final structs =
-      /** @type {List<Item>} */ (transaction.doc.store.clients.get(id.client))!;
+  final structs = (transaction.doc.store.clients.get(id.client))!;
   return structs[findIndexCleanStart(transaction, structs, id.clock)] as Item;
 }
 
-/**
- * Expects that id is actually in store. This function throws or is an infinite loop otherwise.
- *
- * @param {Transaction} transaction
- * @param {StructStore} store
- * @param {ID} id
- * @return {Item}
- *
- * @private
- * @function
- */
-Item getItemCleanEnd(Transaction transaction, StructStore store, ID id) {
-  /**
-   * @type {List<Item>}
-   */
-  // @ts-ignore
+Item? getItemCleanEnd(Transaction transaction, StructStore store, ID id) {
   final structs = store.clients.get(id.client)!;
   final index = findIndexSS(structs, id.clock);
+  if (structs[index] is GC) {
+    return null;
+  }
   final struct = structs[index] as Item;
   if (id.clock != struct.id.clock + struct.length - 1 && struct is! GC) {
     structs.insert(index + 1,
@@ -236,15 +123,6 @@ Item getItemCleanEnd(Transaction transaction, StructStore store, ID id) {
   return struct;
 }
 
-/**
- * Replace `item` with `newitem` in store
- * @param {StructStore} store
- * @param {GC|Item} struct
- * @param {GC|Item} newStruct
- *
- * @private
- * @function
- */
 void replaceStruct(
     StructStore store, AbstractStruct struct, AbstractStruct newStruct) {
   final structs =
@@ -252,17 +130,6 @@ void replaceStruct(
   structs[findIndexSS(structs, struct.id.clock)] = newStruct;
 }
 
-/**
- * Iterate over a range of structs
- *
- * @param {Transaction} transaction
- * @param {List<Item|GC>} structs
- * @param {number} clockStart Inclusive start
- * @param {number} len
- * @param {function(GC|Item):void} f
- *
- * @function
- */
 void iterateStructs(
   Transaction transaction,
   List<AbstractStruct> structs,

@@ -1,14 +1,3 @@
-// import {
-//   isDeleted,
-//   Item,
-//   AbstractType,
-//   Transaction,
-//   AbstractStruct, // eslint-disable-line
-// } from "../internals.js";
-
-// import * as set from "lib0/set.js";
-// import * as array from "lib0/array.js";
-
 import 'package:flutter_crdt/structs/abstract_struct.dart';
 import 'package:flutter_crdt/structs/item.dart';
 import 'package:flutter_crdt/types/abstract_type.dart';
@@ -16,64 +5,22 @@ import 'package:flutter_crdt/utils/delete_set.dart';
 import 'package:flutter_crdt/utils/transaction.dart';
 import 'package:flutter_crdt/y_crdt_base.dart';
 
-/**
- * YEvent describes the changes on a YType.
- */
 class YEvent {
-  /**
-   * @param {AbstractType<any>} target The changed type.
-   * @param {Transaction} transaction
-   */
   YEvent(this.target, this.transaction) : currentTarget = target;
 
-  /**
-   * The type on which this event was created on.
-   * @type {AbstractType<any>}
-   */
   final AbstractType<YEvent> target;
 
-  /**
-   * The current target on which the observe callback is called.
-   * @type {AbstractType<any>}
-   */
   AbstractType currentTarget;
 
-  /**
-   * The transaction that triggered this event.
-   * @type {Transaction}
-   */
   Transaction transaction;
 
-  /**
-   * @type {Object|null}
-   */
   YChanges? _changes;
   Map<String, YChange>? _keys;
 
-  /**
-   * Computes the path from `y` to the changed type.
-   *
-   * The following property holds:
-   * @example
-   *   var type = y
-   *   event.path.forEach(dir => {
-   *     type = type.get(dir)
-   *   })
-   *   type == event.target // => true
-   */
   List get path {
-    // @ts-ignore _item is defined because target is integrated
     return getPathTo(this.currentTarget, this.target);
   }
 
-  /**
-   * Check if a struct is deleted by this event.
-   *
-   * In contrast to change.deleted, this method also returns true if the struct was added and then deleted.
-   *
-   * @param {AbstractStruct} struct
-   * @return {boolean}
-   */
   bool deletes(AbstractStruct struct) {
     return isDeleted(this.transaction.deleteSet, struct.id);
   }
@@ -125,46 +72,26 @@ class YEvent {
     return _keys!;
   }
 
-  List<Map<String, dynamic>> get delta{
+  List<Map<String, dynamic>> get delta {
     return changes.delta;
   }
 
-  /**
-   * Check if a struct is added by this event.
-   *
-   * In contrast to change.deleted, this method also returns true if the struct was added and then deleted.
-   *
-   * @param {AbstractStruct} struct
-   * @return {boolean}
-   */
   bool adds(AbstractStruct struct) {
     return struct.id.clock >=
         (this.transaction.beforeState.get(struct.id.client) ?? 0);
   }
-  /**
-   * This is a computed property. Note that this can only be safely computed during the
-   * event call. Computing this property after other changes happened might result in
-   * unexpected behavior (incorrect computation of deltas). A safe way to collect changes
-   * is to store the `changes` or the `delta` object. Avoid storing the `transaction` object.
-   *
-   * @type {{added:Set<Item>,deleted:Set<Item>,keys:Map<String,{action:'add'|'update'|'delete',oldValue:any}>,delta:Array<{insert?:List<dynamic>|String, delete?:int, retain?:int}>}}
-   */
- YChanges get changes {
+
+  YChanges get changes {
     var changes = _changes;
     if (changes == null) {
       var target = this.target;
       var added = Set<Item>();
       var deleted = Set<Item>();
-      /**
-       * @type {List<{insert:List<dynamic>}|{delete:int}|{retain:int}>}
-       */
       var delta = <Map<String, dynamic>>[];
-      changes=YChanges(added: added, deleted: deleted, keys: keys, delta: delta);
+      changes =
+          YChanges(added: added, deleted: deleted, keys: keys, delta: delta);
       var changed = this.transaction.changed[target];
-      if (changed?.contains(null)==true) {
-        /**
-         * @type {dynamic}
-         */
+      if (changed?.contains(null) == true) {
         var lastOp = null;
         var packOp = () {
           if (lastOp != null) {
@@ -206,7 +133,6 @@ class YEvent {
     }
     return changes;
   }
-
 }
 
 class YChanges {
@@ -260,23 +186,6 @@ class YDelta {
   YDelta._(this.type, this.inserts, this.amount);
 }
 
-/**
- * Compute the path from this type to the specified target.
- *
- * @example
- *   // `child` should be accessible via `type.get(path[0]).get(path[1])..`
- *   const path = type.getPathTo(child)
- *   // assuming `type is YArray`
- *   console.log(path) // might look like => [2, 'key1']
- *   child == type.get(path[0]).get(path[1])
- *
- * @param {AbstractType<any>} parent
- * @param {AbstractType<any>} child target
- * @return {List<string|number>} Path to the target
- *
- * @private
- * @function
- */
 List getPathTo(AbstractType parent, AbstractType child) {
   final path = [];
   var childItem = child.innerItem;
@@ -287,9 +196,7 @@ List getPathTo(AbstractType parent, AbstractType child) {
     } else {
       // parent is array-ish
       var i = 0;
-      var c =
-          /** @type {AbstractType<any>} */ (childItem.parent as AbstractType)
-              .innerStart;
+      var c = (childItem.parent as AbstractType).innerStart;
       while (c != childItem && c != null) {
         if (!c.deleted) {
           i++;
@@ -298,7 +205,7 @@ List getPathTo(AbstractType parent, AbstractType child) {
       }
       path.insert(0, i);
     }
-    child = /** @type {AbstractType<any>} */ childItem.parent as AbstractType;
+    child = childItem.parent as AbstractType;
     childItem = child.innerItem;
   }
   return path;
