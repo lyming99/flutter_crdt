@@ -3,9 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_crdt/lib0/binary.dart' as binary;
 
-/**
- * @module encoding
- */
 import "package:flutter_crdt/lib0/decoding.dart" as decoding;
 import "package:flutter_crdt/lib0/encoding.dart" as encoding;
 import 'package:flutter_crdt/structs/abstract_struct.dart';

@@ -7,8 +7,6 @@ import 'package:flutter_crdt/utils/is_parent_of.dart';
 import 'package:flutter_crdt/utils/observable.dart';
 import 'package:flutter_crdt/utils/struct_store.dart';
 import 'package:flutter_crdt/utils/transaction.dart';
-import 'package:flutter_crdt/y_crdt_base.dart';
-import 'package:collection/collection.dart';
 
 class StackItem {
   StackItem(this.deletions, this.insertions);

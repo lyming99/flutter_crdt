@@ -1,40 +1,3 @@
-/**
- * @module YText
- */
-
-// import {
-//   YEvent,
-//   AbstractType,
-//   getItemCleanStart,
-//   getState,
-//   isVisible,
-//   createID,
-//   YTextRefID,
-//   callTypeObservers,
-//   transact,
-//   ContentEmbed,
-//   GC,
-//   ContentFormat,
-//   ContentString,
-//   splitSnapshotAffectedStructs,
-//   iterateDeletedStructs,
-//   iterateStructs,
-//   findMarker,
-//   updateMarkerChanges,
-//   ArraySearchMarker,
-//   AbstractUpdateDecoder,
-//   AbstractUpdateEncoder,
-//   ID,
-//   Doc,
-//   Item,
-//   Snapshot,
-//   Transaction, // eslint-disable-line
-// } from "../internals.js";
-
-// import * as object from "lib0/object.js";
-// import * as map from "lib0/map.js";
-// import * as error from "lib0/error.js";
-
 import 'package:flutter_crdt/structs/content_embed.dart';
 import 'package:flutter_crdt/structs/content_format.dart';
 import 'package:flutter_crdt/structs/content_string.dart';
@@ -53,11 +16,6 @@ import 'package:flutter_crdt/utils/update_encoder.dart';
 import 'package:flutter_crdt/utils/y_event.dart';
 import 'package:flutter_crdt/y_crdt_base.dart';
 
-/**
- * @param {any} a
- * @param {any} b
- * @return {boolean}
- */
 bool equalAttrs(dynamic a, dynamic b) =>
     a == b ||
         (a is Map &&
@@ -67,12 +25,6 @@ bool equalAttrs(dynamic a, dynamic b) =>
             b.containsKey(entry.key) && b[entry.key] == entry.value));
 
 class ItemTextListPosition {
-  /**
-   * @param {Item|null} left
-   * @param {Item|null} right
-   * @param {number} index
-   * @param {Map<string,any>} currentAttributes
-   */
   ItemTextListPosition(this.left, this.right, this.index,
       this.currentAttributes);
 
@@ -81,9 +33,6 @@ class ItemTextListPosition {
   int index;
   final Map<String, Object?> currentAttributes;
 
-  /**
-   * Only call this if you know that this.right is defined
-   */
   void forward() {
     final _right = this.right;
     if (_right == null) {
@@ -105,15 +54,7 @@ class ItemTextListPosition {
   }
 }
 
-/**
- * @param {Transaction} transaction
- * @param {ItemTextListPosition} pos
- * @param {number} count steps to move forward
- * @return {ItemTextListPosition}
- *
- * @private
- * @function
- */
+
 ItemTextListPosition findNextPosition(Transaction transaction,
     ItemTextListPosition pos, int count) {
   var _right = pos.right;
@@ -132,7 +73,7 @@ ItemTextListPosition findNextPosition(Transaction transaction,
       if (!_right.deleted) {
         updateCurrentAttributes(
             pos.currentAttributes,
-            /** @type {ContentFormat} */ _right.content as ContentFormat);
+             _right.content as ContentFormat);
       }
     }
     pos.left = pos.right;
@@ -143,15 +84,7 @@ ItemTextListPosition findNextPosition(Transaction transaction,
   return pos;
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {number} index
- * @return {ItemTextListPosition}
- *
- * @private
- * @function
- */
+
 ItemTextListPosition findPosition(Transaction transaction, AbstractType parent,
     int index) {
   final currentAttributes = <String, Object?>{};
@@ -167,17 +100,7 @@ ItemTextListPosition findPosition(Transaction transaction, AbstractType parent,
   }
 }
 
-/**
- * Negate applied formats
- *
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {ItemTextListPosition} currPos
- * @param {Map<string,any>} negatedAttributes
- *
- * @private
- * @function
- */
+
 void insertNegatedAttributes(Transaction transaction,
     AbstractType parent,
     ItemTextListPosition currPos,
@@ -189,13 +112,13 @@ void insertNegatedAttributes(Transaction transaction,
           (_right.content is ContentFormat &&
               equalAttrs(
                   negatedAttributes.get(
-                    /** @type {ContentFormat} */
+                    
                       (_right.content as ContentFormat).key),
-                  /** @type {ContentFormat} */ (_right.content as ContentFormat)
+                   (_right.content as ContentFormat)
                   .value)))) {
     if (!_right.deleted) {
       negatedAttributes.remove(
-        /** @type {ContentFormat} */
+        
           (_right.content as ContentFormat).key);
     }
     currPos.forward();
@@ -222,13 +145,7 @@ void insertNegatedAttributes(Transaction transaction,
   });
 }
 
-/**
- * @param {Map<string,any>} currentAttributes
- * @param {ContentFormat} format
- *
- * @private
- * @function
- */
+
 void updateCurrentAttributes(Map<String, dynamic> currentAttributes,
     ContentFormat format) {
   final key = format.key;
@@ -240,13 +157,7 @@ void updateCurrentAttributes(Map<String, dynamic> currentAttributes,
   }
 }
 
-/**
- * @param {ItemTextListPosition} currPos
- * @param {Object<string,any>} attributes
- *
- * @private
- * @function
- */
+
 void minimizeAttributeChanges(ItemTextListPosition currPos,
     Map<String, dynamic> attributes) {
   // go right while attributes[right.key] == right.value (or right is deleted)
@@ -266,16 +177,7 @@ void minimizeAttributeChanges(ItemTextListPosition currPos,
   }
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {ItemTextListPosition} currPos
- * @param {Object<string,any>} attributes
- * @return {Map<string,any>}
- *
- * @private
- * @function
- **/
+
 Map<String, Object?> insertAttributes(Transaction transaction,
     AbstractType parent,
     ItemTextListPosition currPos,
@@ -309,16 +211,7 @@ Map<String, Object?> insertAttributes(Transaction transaction,
   return negatedAttributes;
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {ItemTextListPosition} currPos
- * @param {string|object} text
- * @param {Object<string,any>} attributes
- *
- * @private
- * @function
- **/
+
 void _insertText(Transaction transaction,
     AbstractType parent,
     ItemTextListPosition currPos,
@@ -335,7 +228,7 @@ void _insertText(Transaction transaction,
   final negatedAttributes =
   insertAttributes(transaction, parent, currPos, attributes);
   // insert content
-  final content = text is String ? ContentString(/** @type {string} */
+  final content = text is String ? ContentString(
       text) : ContentEmbed(text as Map<String, dynamic>);
   final index = currPos.index;
   var right = currPos.right;
@@ -361,16 +254,7 @@ void _insertText(Transaction transaction,
   insertNegatedAttributes(transaction, parent, currPos, negatedAttributes);
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {ItemTextListPosition} currPos
- * @param {number} length
- * @param {Object<string,any>} attributes
- *
- * @private
- * @function
- */
+
 void formatText(Transaction transaction,
     AbstractType parent,
     ItemTextListPosition currPos,
@@ -394,8 +278,8 @@ void formatText(Transaction transaction,
     if (!_right.deleted) {
       final _content = _right.content;
       if (_content is ContentFormat) {
-        final key = /** @type {ContentFormat} */ _content.key;
-        final value = /** @type {ContentFormat} */ _content.value;
+        final key =  _content.key;
+        final value =  _content.value;
         final attr = attributes[key];
         if (attributes.containsKey(key)) {
           if (equalAttrs(attr, value)) {
@@ -443,19 +327,7 @@ void formatText(Transaction transaction,
   insertNegatedAttributes(transaction, parent, currPos, negatedAttributes);
 }
 
-/**
- * Call this function after string content has been deleted in order to
- * clean up formatting Items.
- *
- * @param transaction
- * @param start
- * @param curr exclusive end, automatically iterates to the next Content Item
- * @param startAttributes
- * @param currAttributes
- * @return The amount of formatting Items deleted.
- *
- * @function
- */
+
 int cleanupFormattingGap(Transaction transaction, Item start, Item? curr,
     Map<String, dynamic> startAttributes, Map<String, dynamic> currAttributes) {
   Item? end = start;
@@ -509,10 +381,7 @@ int cleanupFormattingGap(Transaction transaction, Item start, Item? curr,
   return cleanups;
 }
 
-/**
- * @param transaction
- * @param item
- */
+
 void cleanupContextlessFormattingGap(Transaction transaction, Item? item) {
   // iterate until item.right is null or content
   while (item != null &&
@@ -550,9 +419,9 @@ void cleanupContextlessFormattingGap(Transaction transaction, Item? item) {
 int cleanupYTextFormatting(YText type) {
   var res = 0;
   transact(
-    /** @type {Doc} */
+    
       type.doc!, (transaction) {
-    var start = /** @type {Item} */ type.innerStart;
+    var start =  type.innerStart;
     var end = type.innerStart;
     var startAttributes = <String, dynamic>{};
     final currentAttributes = {...startAttributes};
@@ -561,7 +430,7 @@ int cleanupYTextFormatting(YText type) {
         if (end.content is ContentFormat) {
           updateCurrentAttributes(
               currentAttributes,
-              /** @type {ContentFormat} */ end.content as ContentFormat);
+               end.content as ContentFormat);
         } else {
           res += cleanupFormattingGap(
               transaction, start!, end, startAttributes, currentAttributes);
@@ -575,15 +444,7 @@ int cleanupYTextFormatting(YText type) {
   return res;
 }
 
-/**
- * @param {Transaction} transaction
- * @param {ItemTextListPosition} currPos
- * @param {number} length
- * @return {ItemTextListPosition}
- *
- * @private
- * @function
- */
+
 ItemTextListPosition deleteText(Transaction transaction,
     ItemTextListPosition currPos, int length) {
   final startLength = length;
@@ -614,8 +475,8 @@ ItemTextListPosition deleteText(Transaction transaction,
       {...currPos.currentAttributes},
     );
   }
-  final parent = /** @type {AbstractType<any>} */
-  /** @type {Item} */ (currPos.left ?? currPos.right as Item).parent
+  final parent = 
+   (currPos.left ?? currPos.right as Item).parent
   as AbstractType;
   if (parent.innerSearchMarker != null &&
       parent.innerSearchMarker!.isNotEmpty) {
@@ -640,38 +501,17 @@ ItemTextListPosition deleteText(Transaction transaction,
  *
  */
 
-/**
- * Attributes that can be assigned to a selection of text.
- *
- * @example
- *   {
- *     bold: true,
- *     font-size: '40px'
- *   }
- *
- * @typedef {Object} TextAttributes
- */
 
-/**
- * @typedef {Object} DeltaItem
- * @property {number|undefined} DeltaItem.delete
- * @property {number|undefined} DeltaItem.retain
- * @property {string|undefined} DeltaItem.insert
- * @property {Object<string,any>} DeltaItem.attributes
- */
 
-/**
- * Event that describes the changes on a YText type.
- */
+
+
+
 class YTextEvent extends YEvent {
   bool childListChanged = false;
   Set<String> keysChanged = {};
   YChanges? _changes;
 
-  /**
-   * @param {YText} ytext
-   * @param {Transaction} transaction
-   */
+  
   YTextEvent(YText ytext, Transaction transaction, Set<dynamic> subs)
       : super(ytext, transaction) {
     for (var sub in subs) {
@@ -868,55 +708,33 @@ class YTextEvent extends YEvent {
   }
 }
 
-/**
- * Type that represents text with formatting information.
- *
- * This type replaces y-richtext as this implementation is able to handle
- * block formats (format information on a paragraph), embeds (complex elements
- * like pictures and videos), and text formats (**bold**, *italic*).
- *
- * @extends AbstractType<YTextEvent>
- */
+
 class YText extends AbstractType<YTextEvent> {
   static YText create() => YText();
 
-  /**
-   * @param {String} [string] The initial value of the YText.
-   */
+  
   YText([String? string]) {
-    /**
-     * Array of pending operations on this type
-     * @type {List<function():void>?}
-     */
+    
     this._pending = string != null ? [() => this.insert(0, string)] : [];
   }
 
-  /**
-   * @type {List<ArraySearchMarker>}
-   */
+  
   @override
   final List<ArraySearchMarker> innerSearchMarker = [];
 
   List<void Function()>? _pending;
 
-  /**
-   * Number of characters of this text type.
-   *
-   * @type {number}
-   */
+  
   int get length {
     return this.innerLength;
   }
 
-  /**
-   * @param {Doc} y
-   * @param {Item} item
-   */
+  
   @override
   innerIntegrate(Doc y, Item? item) {
     super.innerIntegrate(y, item);
     try {
-      /** @type {List<function>} */
+      
       (this._pending!).forEach((f) => f());
     } catch (e) {
       logger.e(e);
@@ -929,9 +747,7 @@ class YText extends AbstractType<YTextEvent> {
     return YText();
   }
 
-  /**
-   * @return {YText}
-   */
+  
   @override
   clone() {
     final text = YText();
@@ -939,12 +755,7 @@ class YText extends AbstractType<YTextEvent> {
     return text;
   }
 
-  /**
-   * Creates YTextEvent and calls observers.
-   *
-   * @param {Transaction} transaction
-   * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
-   */
+  
   @override
   void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
     super.innerCallObserver(transaction, parentSubs);
@@ -964,11 +775,11 @@ class YText extends AbstractType<YTextEvent> {
         }
         iterateStructs(
             transaction,
-            /** @type {List<Item|GC>} */ doc.store.clients.get(client)!,
+             doc.store.clients.get(client)!,
             clock,
             afterClock, (item) {
           if (!item.deleted &&
-              /** @type {Item} */ (item as Item).content is ContentFormat) {
+               (item as Item).content is ContentFormat) {
             foundFormattingItem = true;
           }
         });
@@ -1010,17 +821,11 @@ class YText extends AbstractType<YTextEvent> {
     }
   }
 
-  /**
-   * Returns the unformatted string representation of this YText type.
-   *
-   * @public
-   */
+  
   @override
   String toString() {
     var str = StringBuffer();
-    /**
-     * @type {Item|null}
-     */
+    
     var n = this.innerStart;
     while (n != null) {
       if (!n.deleted && n.countable && n.content is ContentString) {
@@ -1031,27 +836,13 @@ class YText extends AbstractType<YTextEvent> {
     return str.toString();
   }
 
-  /**
-   * Returns the unformatted string representation of this YText type.
-   *
-   * @return {string}
-   * @public
-   */
+  
   @override
   String toJSON() {
     return this.toString();
   }
 
-  /**
-   * Apply a {@link Delta} on this shared YText type.
-   *
-   * @param {any} delta The changes to apply on this element.
-   * @param {object}  [opts]
-   * @param {boolean} [opts.sanitize] Sanitize input delta. Removes ending newlines if set to true.
-   *
-   *
-   * @public
-   */
+  
   void applyDelta(List<Map<String, Object?>> delta, {bool sanitize = true}) {
     if (this.doc != null) {
       transact(this.doc!, (transaction) {
@@ -1110,37 +901,17 @@ class YText extends AbstractType<YTextEvent> {
         }
       });
     } else {
-      /** @type {List<function>} */
+      
       (this._pending!).add(() => this.applyDelta(delta));
     }
   }
 
-  /**
-   * Returns the Delta representation of this YText type.
-   *
-   * @param {Snapshot} [snapshot]
-   * @param {Snapshot} [prevSnapshot]
-   * @param {function('removed' | 'added', ID):any} [computeYChange]
-   * @return {any} The Delta representation of this type.
-   *
-   * @public
-   */
+  
   //
-  /**
-   * Returns the Delta representation of this YText type.
-   *
-   * @param {Snapshot} [snapshot]
-   * @param {Snapshot} [prevSnapshot]
-   * @param {Function(String, ID): dynamic} [computeYChange]
-   * @return {dynamic} The Delta representation of this type.
-   *
-   * @public
-   */
+  
   List<Map<String, Object?>> toDelta(
       [Snapshot? snapshot, Snapshot? prevSnapshot, Function? computeYChange]) {
-    /**
-     * @type{List<dynamic>}
-     */
+    
     List<Map<String, Object?>> resultOps = [];
     final currentAttributes = <String, dynamic>{};
     final doc = this.doc;
@@ -1150,18 +921,14 @@ class YText extends AbstractType<YTextEvent> {
     void packStr() {
       if (str.length > 0) {
         // pack str with attributes to ops
-        /**
-         * @type {Map<String, dynamic>}
-         */
+        
         final attributes = {};
         var addAttributes = false;
         currentAttributes.forEach((key, value) {
           addAttributes = true;
           attributes[key] = value;
         });
-        /**
-         * @type {Map<String, dynamic>}
-         */
+        
         final op = <String, dynamic>{'insert': str};
         if (addAttributes) {
           op['attributes'] = attributes;
@@ -1210,9 +977,7 @@ class YText extends AbstractType<YTextEvent> {
             case ContentEmbed:
               {
                 packStr();
-                /**
-                 * @type {Map<String, dynamic>}
-                 */
+                
                 final op = {'insert': n!.content.getContent()[0]};
                 if (currentAttributes.isNotEmpty) {
                   final attrs = <String, dynamic>{};
@@ -1256,16 +1021,7 @@ class YText extends AbstractType<YTextEvent> {
     return resultOps;
   }
 
-  /**
-   * Insert text at a given index.
-   *
-   * @param {number} index The index at which to start inserting.
-   * @param {String} text The text to insert at the specified position.
-   * @param {TextAttributes} [attributes] Optionally define some formatting
-   *                                    information to apply on the inserted
-   *                                    Text.
-   * @public
-   */
+  
   void insert(int index,
       String text, [
         Map<String, Object?>? _attributes,
@@ -1290,21 +1046,12 @@ class YText extends AbstractType<YTextEvent> {
         _insertText(transaction, this, pos, text, attributes);
       });
     } else {
-      /** @type {List<function>} */
+      
       (this._pending!).add(() => this.insert(index, text, _attributes));
     }
   }
 
-  /**
-   * Inserts an embed at a index.
-   *
-   * @param {number} index The index to insert the embed at.
-   * @param {Object} embed The Object that represents the embed.
-   * @param {TextAttributes} attributes Attribute information to apply on the
-   *                                    embed
-   *
-   * @public
-   */
+  
   void insertEmbed(int index,
       Map<String, dynamic> embed, [
         Map<String, Object?>? attributes,
@@ -1320,19 +1067,12 @@ class YText extends AbstractType<YTextEvent> {
         _insertText(transaction, this, pos, embed, attributes!);
       });
     } else {
-      /** @type {List<function>} */
+      
       (this._pending!).add(() => this.insertEmbed(index, embed, attributes));
     }
   }
 
-  /**
-   * Deletes text starting from an index.
-   *
-   * @param {number} index Index at which to start deleting.
-   * @param {number} length The number of characters to remove. Defaults to 1.
-   *
-   * @public
-   */
+  
   void delete(int index, int length) {
     if (length == 0) {
       return;
@@ -1343,21 +1083,12 @@ class YText extends AbstractType<YTextEvent> {
         deleteText(transaction, findPosition(transaction, this, index), length);
       });
     } else {
-      /** @type {List<function>} */
+      
       (this._pending!).add(() => this.delete(index, length));
     }
   }
 
-  /**
-   * Assigns properties to a range of text.
-   *
-   * @param {number} index The position where to start formatting.
-   * @param {number} length The amount of characters to assign properties to.
-   * @param {TextAttributes} attributes Attribute information to apply on the
-   *                                    text.
-   *
-   * @public
-   */
+  
   void format(int index, int length, Map<String, Object?> attributes) {
     if (length == 0) {
       return;
@@ -1372,20 +1103,12 @@ class YText extends AbstractType<YTextEvent> {
         formatText(transaction, this, pos, length, attributes);
       });
     } else {
-      /** @type {List<function>} */
+      
       (this._pending!).add(() => this.format(index, length, attributes));
     }
   }
 
-  /**
-   * Removes an attribute.
-   *
-   * @note Xml-Text nodes don't have attributes. You can use this feature to assign properties to complete text-blocks.
-   *
-   * @param {String} attributeName The attribute name that is to be removed.
-   *
-   * @public
-   */
+  
   void removeAttribute(String attributeName) {
     if (this.doc != null) {
       transact(this.doc!, (transaction) {
@@ -1397,16 +1120,7 @@ class YText extends AbstractType<YTextEvent> {
     }
   }
 
-  /**
-   * Sets or updates an attribute.
-   *
-   * @note Xml-Text nodes don't have attributes. You can use this feature to assign properties to complete text-blocks.
-   *
-   * @param attributeName The attribute name that is to be set.
-   * @param attributeValue The attribute value that is to be set.
-   *
-   * @public
-   */
+  
   void setAttribute(String attributeName, dynamic attributeValue) {
     if (this.doc != null) {
       transact(this.doc!, (transaction) {
@@ -1418,17 +1132,7 @@ class YText extends AbstractType<YTextEvent> {
     }
   }
 
-  /**
-   * Returns an attribute value that belongs to the attribute name.
-   *
-   * @note Xml-Text nodes don't have attributes. You can use this feature to assign properties to complete text-blocks.
-   *
-   * @param {String} attributeName The attribute name that identifies the
-   *                               queried value.
-   * @return {dynamic} The queried attribute value.
-   *
-   * @public
-   */
+  
   dynamic getAttribute(String attributeName) {
     return typeMapGet(this, attributeName);
   }
@@ -1446,20 +1150,12 @@ class YText extends AbstractType<YTextEvent> {
     return typeMapGetAll(this);
   }
 
-  /**
-   * @param {AbstractUpdateEncoder} encoder
-   */
+  
   @override
   void innerWrite(AbstractUpdateEncoder encoder) {
     encoder.writeTypeRef(YTextRefID);
   }
 }
 
-/**
- * @param {AbstractUpdateDecoder} decoder
- * @return {YText}
- *
- * @private
- * @function
- */
+
 YText readYText(AbstractUpdateDecoder decoder) => YText();

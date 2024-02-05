@@ -1,24 +1,4 @@
-// import {
-//   removeEventHandlerListener,
-//   callEventHandlerListeners,
-//   addEventHandlerListener,
-//   createEventHandler,
-//   getState,
-//   isVisible,
-//   ContentType,
-//   createID,
-//   ContentAny,
-//   ContentBinary,
-//   getItemCleanStart,
-//   ContentDoc, YText, YArray, AbstractUpdateEncoder, Doc, Snapshot, Transaction, EventHandler, YEvent, Item, // eslint-disable-line
-// } from '../internals.js'
-
 import 'dart:math' as math;
-
-// import * as map from 'lib0/map.js'
-// import * as iterator from 'lib0/iterator.js'
-// import * as error from 'lib0/error.js'
-// import * as math from 'lib0/math.js'
 
 import 'dart:typed_data';
 
@@ -39,20 +19,10 @@ import 'package:flutter_crdt/y_crdt_base.dart';
 
 const maxSearchMarker = 80;
 
-/**
- * A unique timestamp that identifies each marker.
- *
- * Time is relative,.. this is more like an ever-increasing clock.
- *
- * @type {number}
- */
 int globalSearchMarkerTimestamp = 0;
 
 class ArraySearchMarker {
-  /**
-   * @param {Item} p
-   * @param {number} index
-   */
+  
   ArraySearchMarker(this.p, this.index)
       : timestamp = globalSearchMarkerTimestamp++ {
     p.marker = true;
@@ -63,20 +33,12 @@ class ArraySearchMarker {
   int timestamp;
 }
 
-/**
- * @param {ArraySearchMarker} marker
- */
+
 void refreshMarkerTimestamp(ArraySearchMarker marker) {
   marker.timestamp = globalSearchMarkerTimestamp++;
 }
 
-/**
- * This is rather complex so this function is the only thing that should overwrite a marker
- *
- * @param {ArraySearchMarker} marker
- * @param {Item} p
- * @param {number} index
- */
+
 void overwriteMarker(ArraySearchMarker marker, Item p, int index) {
   marker.p.marker = false;
   marker.p = p;
@@ -85,11 +47,7 @@ void overwriteMarker(ArraySearchMarker marker, Item p, int index) {
   marker.timestamp = globalSearchMarkerTimestamp++;
 }
 
-/**
- * @param {List<ArraySearchMarker>} searchMarker
- * @param {Item} p
- * @param {number} index
- */
+
 ArraySearchMarker markPosition(List<ArraySearchMarker> searchMarker, Item p,
     int index) {
   if (searchMarker.length >= maxSearchMarker) {
@@ -106,18 +64,7 @@ ArraySearchMarker markPosition(List<ArraySearchMarker> searchMarker, Item p,
   }
 }
 
-/**
- * Search marker help us to find positions in the associative array faster.
- *
- * They speed up the process of finding a position without much bookkeeping.
- *
- * A maximum of `maxSearchMarker` objects are created.
- *
- * This function always returns a refreshed marker (updated timestamp)
- *
- * @param {AbstractType<any>} yarray
- * @param {number} index
- */
+
 ArraySearchMarker? findMarker(AbstractType yarray, int index) {
   final _searchMarker = yarray.innerSearchMarker;
   if (yarray.innerStart == null || index == 0 || _searchMarker == null) {
@@ -180,7 +127,7 @@ ArraySearchMarker? findMarker(AbstractType yarray, int index) {
   //     if (!start.deleted && start.countable) {
   //       pos += start.length
   //     }
-  //     start = /** @type {Item} */ (start.right)
+  //     start =  (start.right)
   //   }
   //   if (pos != pindex) {
   //     debugger
@@ -200,7 +147,7 @@ ArraySearchMarker? findMarker(AbstractType yarray, int index) {
   }
   if (marker != null &&
       (marker.index - pindex).abs() <
-          /** @type {YText|YList<any>} */ (p.parent as AbstractType)
+           (p.parent as AbstractType)
           .innerLength /
           maxSearchMarker) {
     // adjust existing marker
@@ -212,23 +159,13 @@ ArraySearchMarker? findMarker(AbstractType yarray, int index) {
   }
 }
 
-/**
- * Update markers when a change happened.
- *
- * This should be called before doing a deletion!
- *
- * @param {List<ArraySearchMarker>} searchMarker
- * @param {number} index
- * @param {number} len If insertion, len is positive. If deletion, len is negative.
- */
+
 void updateMarkerChanges(List<ArraySearchMarker> searchMarker, int index,
     int len) {
   for (var i = searchMarker.length - 1; i >= 0; i--) {
     final m = searchMarker[i];
     if (len > 0) {
-      /**
-       * @type {Item|null}
-       */
+      
       Item? p = m.p;
       p.marker = false;
       // Ideally we just want to do a simple position comparison, but this will only work if
@@ -256,12 +193,7 @@ void updateMarkerChanges(List<ArraySearchMarker> searchMarker, int index,
   }
 }
 
-/**
- * Accumulate all (list) children of a type and return them as an Array.
- *
- * @param {AbstractType<any>} t
- * @return {List<Item>}
- */
+
 List<Item> getTypeChildren(AbstractType t) {
   var s = t.innerStart;
   final arr = <Item>[];
@@ -272,15 +204,7 @@ List<Item> getTypeChildren(AbstractType t) {
   return arr;
 }
 
-/**
- * Call event listeners with an event. This will also add an event to all
- * parents (for `.observeDeep` handlers).
- *
- * @template EventType
- * @param {AbstractType<EventType>} type
- * @param {Transaction} transaction
- * @param {EventType} event
- */
+
 void callTypeObservers<EventType extends YEvent>(AbstractType<EventType> type,
     Transaction transaction, EventType event) {
   final changedType = type;
@@ -294,7 +218,7 @@ void callTypeObservers<EventType extends YEvent>(AbstractType<EventType> type,
       break;
     }
     //会不会为空？
-    var temp = /** @type {AbstractType<any>} */ (_type.innerItem!.parent
+    var temp =  (_type.innerItem!.parent
     as AbstractType<YEvent>?);
     if (temp == null) {
       break;
@@ -304,96 +228,58 @@ void callTypeObservers<EventType extends YEvent>(AbstractType<EventType> type,
   callEventHandlerListeners(changedType._eH, event, transaction);
 }
 
-/**
- * @template EventType
- * Abstract Yjs Type class
- */
+
 class AbstractType<EventType> {
   static AbstractType<EventType> create<EventType>() =>
       AbstractType<EventType>();
 
-  /**
-   * @type {Item|null}
-   */
+  
   Item? innerItem;
 
-  /**
-   * @type {Map<string,Item>}
-   */
+  
   Map<String, Item> innerMap = {};
 
-  /**
-   * @type {Item|null}
-   */
+  
   Item? innerStart;
 
-  /**
-   * @type {Doc|null}
-   */
+  
   Doc? doc;
   int innerLength = 0;
 
-  /**
-   * Event handlers
-   * @type {EventHandler<EventType,Transaction>}
-   */
+  
   final EventHandler<EventType, Transaction> _eH = createEventHandler();
 
-  /**
-   * Deep event handlers
-   * @type {EventHandler<List<YEvent>,Transaction>}
-   */
+  
   final EventHandler<List<YEvent>, Transaction> innerdEH = createEventHandler();
 
-  /**
-   * @type {null | List<ArraySearchMarker>}
-   */
+  
   List<ArraySearchMarker>? innerSearchMarker;
 
-  /**
-   * @return {AbstractType<any>|null}
-   */
+  
   AbstractType? get parent {
     return this.innerItem?.parent as AbstractType?;
   }
 
-  /**
-   * Integrate this type into the Yjs instance.
-   *
-   * * Save this struct in the os
-   * * This type is sent to other client
-   * * Observer functions are fired
-   *
-   * @param {Doc} y The Yjs instance
-   * @param {Item|null} item
-   */
+  
   void innerIntegrate(Doc y, Item? item) {
     this.doc = y;
     this.innerItem = item;
   }
 
-  /**
-   * @return {AbstractType<EventType>}
-   */
+  
   AbstractType<EventType> innerCopy() {
     throw UnimplementedError();
   }
 
-  /**
-   * @return {AbstractType<EventType>}
-   */
+  
   AbstractType<EventType> clone() {
     throw UnimplementedError();
   }
 
-  /**
-   * @param {AbstractUpdateEncoder} encoder
-   */
+  
   void innerWrite(AbstractUpdateEncoder encoder) {}
 
-  /**
-   * The first non-deleted item
-   */
+  
   Item? get innerFirst {
     var n = this.innerStart;
     while (n != null && n.deleted) {
@@ -402,73 +288,40 @@ class AbstractType<EventType> {
     return n;
   }
 
-  /**
-   * Creates YEvent and calls all type observers.
-   * Must be implemented by each type.
-   *
-   * @param {Transaction} transaction
-   * @param {Set<null|string>} parentSubs Keys changed on this type. `null` if list was modified.
-   */
+  
   void innerCallObserver(Transaction transaction, Set<String?> parentSubs) {
     if (!transaction.local && (this.innerSearchMarker?.isNotEmpty ?? false)) {
       this.innerSearchMarker!.length = 0;
     }
   }
 
-  /**
-   * Observe all events that are created on this type.
-   *
-   * @param {function(EventType, Transaction):void} f Observer function
-   */
+  
   void observe(void Function(EventType eventType, Transaction transaction) f) {
     addEventHandlerListener(this._eH, f);
   }
 
-  /**
-   * Observe all events that are created by this type and its children.
-   *
-   * @param {function(List<YEvent>,Transaction):void} f Observer function
-   */
+  
   void observeDeep(void Function(List<YEvent> eventList, Transaction transaction) f) {
     addEventHandlerListener(this.innerdEH, f);
   }
 
-  /**
-   * Unregister an observer function.
-   *
-   * @param {function(EventType,Transaction):void} f Observer function
-   */
+  
   void unobserve(void Function(EventType eventType, Transaction transaction) f) {
     removeEventHandlerListener(this._eH, f);
   }
 
-  /**
-   * Unregister an observer function.
-   *
-   * @param {function(List<YEvent>,Transaction):void} f Observer function
-   */
+  
   void unobserveDeep(void Function(List<YEvent> eventList, Transaction transaction) f) {
     removeEventHandlerListener(this.innerdEH, f);
   }
 
-  /**
-   * @abstract
-   * @return {any}
-   */
+  
   Object toJSON() {
     return Object();
   }
 }
 
-/**
- * @param {AbstractType<any>} type
- * @param {number} start
- * @param {number} end
- * @return {List<any>}
- *
- * @private
- * @function
- */
+
 List typeListSlice(AbstractType type, int start, int end) {
   if (start < 0) {
     start = type.innerLength + start;
@@ -497,13 +350,7 @@ List typeListSlice(AbstractType type, int start, int end) {
   return cs;
 }
 
-/**
- * @param {AbstractType<any>} type
- * @return {List<any>}
- *
- * @private
- * @function
- */
+
 List typeListToArray(AbstractType type) {
   final cs = <dynamic>[];
   var n = type.innerStart;
@@ -519,14 +366,7 @@ List typeListToArray(AbstractType type) {
   return cs;
 }
 
-/**
- * @param {AbstractType<any>} type
- * @param {Snapshot} snapshot
- * @return {List<any>}
- *
- * @private
- * @function
- */
+
 List typeListToArraySnapshot(AbstractType type, Snapshot snapshot) {
   final cs = <dynamic>[];
   var n = type.innerStart;
@@ -542,15 +382,7 @@ List typeListToArraySnapshot(AbstractType type, Snapshot snapshot) {
   return cs;
 }
 
-/**
- * Executes a provided function on once on overy element of this YArray.
- *
- * @param {AbstractType<any>} type
- * @param {function(any,number,any):void} f A function to execute on every element of this YArray.
- *
- * @private
- * @function
- */
+
 void typeListForEach<L, R extends AbstractType<dynamic>>(R type,
     void Function(L, int, R) f) {
   var index = 0;
@@ -566,20 +398,10 @@ void typeListForEach<L, R extends AbstractType<dynamic>>(R type,
   }
 }
 
-/**
- * @template C,R
- * @param {AbstractType<any>} type
- * @param {function(C,number,AbstractType<any>):R} f
- * @return {List<R>}
- *
- * @private
- * @function
- */
+
 List<R> typeListMap<C, R, T extends AbstractType<dynamic>>(T type,
     R Function(C, int, T) f) {
-  /**
-   * @type {List<any>}
-   */
+  
   final result = <R>[];
   typeListForEach<C, T>(type, (c, i, _) {
     result.add(f(c, i, type));
@@ -587,13 +409,7 @@ List<R> typeListMap<C, R, T extends AbstractType<dynamic>>(T type,
   return result;
 }
 
-/**
- * @param {AbstractType<any>} type
- * @return {IterableIterator<any>}
- *
- * @private
- * @function
- */
+
 Iterator<T> typeListCreateIterator<T>(AbstractType type) {
   return TypeListIterator<T>(type.innerStart);
 }
@@ -635,17 +451,7 @@ class TypeListIterator<T> implements Iterator<T> {
   }
 }
 
-/**
- * Executes a provided function on once on overy element of this YArray.
- * Operates on a snapshotted state of the document.
- *
- * @param {AbstractType<any>} type
- * @param {function(any,number,AbstractType<any>):void} f A function to execute on every element of this YArray.
- * @param {Snapshot} snapshot
- *
- * @private
- * @function
- */
+
 void typeListForEachSnapshot(AbstractType type,
     void Function(dynamic, int, AbstractType) f, Snapshot snapshot) {
   var index = 0;
@@ -661,14 +467,7 @@ void typeListForEachSnapshot(AbstractType type,
   }
 }
 
-/**
- * @param {AbstractType<any>} type
- * @param {number} index
- * @return {any}
- *
- * @private
- * @function
- */
+
 dynamic typeListGet(AbstractType type, int index) {
   final marker = findMarker(type, index);
   var n = type.innerStart;
@@ -686,15 +485,7 @@ dynamic typeListGet(AbstractType type, int index) {
   }
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {Item?} referenceItem
- * @param {List<Object<string,any>|List<any>|boolean|number|string|Uint8Array>} content
- *
- * @private
- * @function
- */
+
 void typeListInsertGenericsAfter(Transaction transaction,
     AbstractType parent,
     Item? referenceItem,
@@ -704,9 +495,7 @@ void typeListInsertGenericsAfter(Transaction transaction,
   final ownClientId = doc.clientID;
   final store = doc.store;
   final right = referenceItem == null ? parent.innerStart : referenceItem.right;
-  /**
-   * @type {List<Object|List<any>|number>}
-   */
+  
   var jsonContent = <Object>[];
   final packJsonContent = () {
     if (jsonContent.length > 0) {
@@ -756,7 +545,7 @@ void typeListInsertGenericsAfter(Transaction transaction,
             right?.id,
             parent,
             null,
-            ContentDoc(/** @type {Doc} */
+            ContentDoc(
                 c));
         left!.integrate(transaction, 0);
       } else if (c is AbstractType) {
@@ -778,15 +567,7 @@ void typeListInsertGenericsAfter(Transaction transaction,
   packJsonContent();
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {number} index
- * @param {List<Object<string,any>|List<any>|number|string|Uint8Array>} content
- *
- * @private
- * @function
- */
+
 void typeListInsertGenerics(Transaction transaction,
     AbstractType parent,
     int index,
@@ -832,17 +613,7 @@ void typeListInsertGenerics(Transaction transaction,
   return typeListInsertGenericsAfter(transaction, parent, n, content);
 }
 
-/**
- * Pushing content is special as we generally want to push after the last item. So we don't have to update
- * the serach marker.
- *
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {Array<Object<string,any>|Array<any>|number|null|string|Uint8Array>} content
- *
- * @private
- * @function
- */
+
 void typeListPushGenerics(Transaction transaction, AbstractType parent,
     List<dynamic> content) {
   ArraySearchMarker? marker;
@@ -859,15 +630,7 @@ void typeListPushGenerics(Transaction transaction, AbstractType parent,
   }
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {number} index
- * @param {number} length
- *
- * @private
- * @function
- */
+
 void typeListDelete(Transaction transaction, AbstractType parent, int index,
     int _length) {
   var length = _length;
@@ -913,14 +676,7 @@ void typeListDelete(Transaction transaction, AbstractType parent, int index,
   }
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {string} key
- *
- * @private
- * @function
- */
+
 void typeMapDelete(Transaction transaction, AbstractType parent, String key) {
   final c = parent.innerMap.get(key);
   if (c != null) {
@@ -928,15 +684,7 @@ void typeMapDelete(Transaction transaction, AbstractType parent, String key) {
   }
 }
 
-/**
- * @param {Transaction} transaction
- * @param {AbstractType<any>} parent
- * @param {string} key
- * @param {Object|number|List<any>|string|Uint8Array|AbstractType<any>} value
- *
- * @private
- * @function
- */
+
 void typeMapSet(Transaction transaction,
     AbstractType parent,
     String key,
@@ -957,10 +705,10 @@ void typeMapSet(Transaction transaction,
         value is String) {
       content = ContentAny(<dynamic>[value]);
     } else if (value is Uint8List) {
-      content = ContentBinary(/** @type {Uint8Array} */
+      content = ContentBinary(
           value);
     } else if (value is Doc) {
-      content = ContentDoc(/** @type {Doc} */
+      content = ContentDoc(
           value);
     } else {
       if (value is AbstractType) {
@@ -982,14 +730,7 @@ void typeMapSet(Transaction transaction,
   ).integrate(transaction, 0);
 }
 
-/**
- * @param {AbstractType<any>} parent
- * @param {string} key
- * @return {Object<string,any>|number|List<any>|string|Uint8Array|AbstractType<any>|undefined}
- *
- * @private
- * @function
- */
+
 dynamic typeMapGet(AbstractType parent, String key) {
   final val = parent.innerMap.get(key);
   return val != null && !val.deleted
@@ -997,17 +738,9 @@ dynamic typeMapGet(AbstractType parent, String key) {
       : null;
 }
 
-/**
- * @param {AbstractType<any>} parent
- * @return {Object<string,Object<string,any>|number|List<any>|string|Uint8Array|AbstractType<any>|undefined>}
- *
- * @private
- * @function
- */
+
 dynamic typeMapGetAll(AbstractType parent) {
-  /**
-   * @type {Object<string,any>}
-   */
+  
   final res = <String, dynamic>{};
   parent.innerMap.forEach((key, value) {
     if (!value.deleted) {
@@ -1017,28 +750,13 @@ dynamic typeMapGetAll(AbstractType parent) {
   return res;
 }
 
-/**
- * @param {AbstractType<any>} parent
- * @param {string} key
- * @return {boolean}
- *
- * @private
- * @function
- */
+
 bool typeMapHas(AbstractType parent, String key) {
   final val = parent.innerMap.get(key);
   return val != null && !val.deleted;
 }
 
-/**
- * @param {AbstractType<any>} parent
- * @param {string} key
- * @param {Snapshot} snapshot
- * @return {Object<string,any>|number|List<any>|string|Uint8Array|AbstractType<any>|undefined}
- *
- * @private
- * @function
- */
+
 dynamic typeMapGetSnapshot(AbstractType parent, String key, Snapshot snapshot) {
   var v = parent.innerMap.get(key);
   while (v != null &&
@@ -1051,12 +769,6 @@ dynamic typeMapGetSnapshot(AbstractType parent, String key, Snapshot snapshot) {
       : null;
 }
 
-/**
- * @param {Map<string,Item>} map
- * @return {IterableIterator<List<any>>}
- *
- * @private
- * @function
- */
+
 Iterable<MapEntry<String, Item>> createMapIterator(Map<String, Item> map) =>
     map.entries.where((entry) => !entry.value.deleted);

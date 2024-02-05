@@ -194,7 +194,7 @@ AbsolutePosition? createAbsolutePositionFromRelativePosition(
       }
       final item = followRedone(store, typeID).item;
       if (item is Item && item.content is ContentType) {
-        type = (item.content as ContentType).type;
+        type = getContentType(item.content)!;
       } else {
         // struct is garbage collected
         return null;

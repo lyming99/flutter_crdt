@@ -84,7 +84,7 @@ void tryToMergeWithLeft(List<AbstractStruct> structs, int pos) {
               right) {
         (right.parent as AbstractType)
             .innerMap
-            .set(right.parentSub!, /** @type {Item} */ left as Item);
+            .set(right.parentSub!,  left as Item);
       }
     }
   }
@@ -120,7 +120,7 @@ void tryGcDeleteSet(
 
 void tryMergeDeleteSet(DeleteSet ds, StructStore store) {
   ds.clients.forEach((client, deleteItems) {
-    final structs = /** @type {List<GC|Item>} */ store.clients.get(client);
+    final structs =  store.clients.get(client);
     if (structs != null) {
       for (var di = deleteItems.length - 1; di >= 0; di--) {
         final deleteItem = deleteItems[di];

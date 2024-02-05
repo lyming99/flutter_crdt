@@ -1,14 +1,3 @@
-// import {
-//   Doc,
-//   AbstractUpdateDecoder,
-//   AbstractUpdateEncoder,
-//   StructStore,
-//   Transaction,
-//   Item, // eslint-disable-line
-// } from "../internals.js";
-
-// import * as error from "lib0/error.js";
-
 import 'package:flutter_crdt/structs/item.dart';
 import 'package:flutter_crdt/utils/doc.dart';
 import 'package:flutter_crdt/utils/update_decoder.dart';
@@ -28,13 +17,9 @@ class _Opts {
   }
 }
 
-/**
- * @private
- */
+
 class ContentDoc implements AbstractContent {
-  /**
-   * @param {Doc} doc
-   */
+  
   ContentDoc(this.doc) {
     final doc = this.doc;
     if (doc != null) {
@@ -53,70 +38,49 @@ class ContentDoc implements AbstractContent {
       }
     }
   }
-  /**
-     * @type {Doc}
-     */
+  
   Doc? doc;
-  /**
-     * @type {any}
-     */
+  
 
   final opts = _Opts();
 
-  /**
-   * @return {number}
-   */
+  
   @override
   getLength() {
     return 1;
   }
 
-  /**
-   * @return {List<any>}
-   */
+  
   @override
   getContent() {
     return [this.doc];
   }
 
-  /**
-   * @return {boolean}
-   */
+  
   @override
   isCountable() {
     return true;
   }
 
-  /**
-   * @return {ContentDoc}
-   */
+  
   @override
   copy() {
     return ContentDoc(this.doc);
   }
 
-  /**
-   * @param {number} offset
-   * @return {ContentDoc}
-   */
+  
   @override
   splice(offset) {
     throw UnimplementedError();
   }
 
-  /**
-   * @param {ContentDoc} right
-   * @return {boolean}
-   */
+  
   @override
   mergeWith(right) {
     return false;
   }
 
-  /**
-   * @param {Transaction} transaction
-   * @param {Item} item
-   */
+  
   @override
   integrate(transaction, item) {
     // this needs to be reflected in doc.destroy as well
@@ -130,9 +94,7 @@ class ContentDoc implements AbstractContent {
     }
   }
 
-  /**
-   * @param {Transaction} transaction
-   */
+  
   @override
   delete(transaction) {
     if (transaction.subdocsAdded.contains(this.doc)) {
@@ -142,37 +104,25 @@ class ContentDoc implements AbstractContent {
     }
   }
 
-  /**
-   * @param {StructStore} store
-   */
+  
   @override
   gc(store) {}
 
-  /**
-   * @param {AbstractUpdateEncoder} encoder
-   * @param {number} offset
-   */
+  
   @override
   write(encoder, offset) {
     encoder.writeString(this.doc!.guid);
     encoder.writeAny(this.opts.toMap());
   }
 
-  /**
-   * @return {number}
-   */
+  
   @override
   getRef() {
     return 9;
   }
 }
 
-/**
- * @private
- *
- * @param {AbstractUpdateDecoder} decoder
- * @return {ContentDoc}
- */
+
 ContentDoc readContentDoc(AbstractUpdateDecoder decoder) {
   final guid = decoder.readString();
   final params = decoder.readAny();

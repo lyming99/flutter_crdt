@@ -1,29 +1,3 @@
-// import {
-//   GC,
-//   getState,
-//   AbstractStruct,
-//   replaceStruct,
-//   addStruct,
-//   addToDeleteSet,
-//   findRootTypeKey,
-//   compareIDs,
-//   getItem,
-//   getItemCleanEnd,
-//   getItemCleanStart,
-//   readContentDeleted,
-//   readContentBinary,
-//   readContentJSON,
-//   readContentAny,
-//   readContentString,
-//   readContentEmbed,
-//   readContentDoc,
-//   createID,
-//   readContentFormat,
-//   readContentType,
-//   addChangedTypeToTransaction,
-//   AbstractUpdateDecoder, AbstractUpdateEncoder, ContentType, ContentDeleted, StructStore, ID, AbstractType, Transaction // eslint-disable-line
-// } from '../internals.js'
-
 import 'package:flutter_crdt/lib0/binary.dart' as binary;
 
 // import * as error from 'lib0/error.js'
@@ -65,17 +39,7 @@ export 'package:flutter_crdt/structs/content_string.dart'
     show readContentString;
 export 'package:flutter_crdt/structs/content_type.dart' show readContentType;
 
-/**
- * @todo This should return several items
- *
- * @param {StructStore} store
- * @param {ID} id
- * @return {{item:Item, diff:number}}
- */
 _R followRedone(StructStore store, ID id) {
-  /**
-   * @type {ID|null}
-   */
   ID? nextID = id;
   var diff = 0;
   AbstractStruct item;
@@ -102,33 +66,13 @@ class _R {
   const _R(this.item, this.diff);
 }
 
-/**
- * Make sure that neither item nor any of its parents is ever deleted.
- *
- * This property does not persist when storing it into a database or when
- * sending it to other peers
- *
- * @param {Item|null} item
- * @param {boolean} keep
- */
 void keepItem(item, keep) {
   while (item != null && item.keep != keep) {
     item.keep = keep;
-    item = /** @type {AbstractType<any>} */ (item.parent as AbstractType)
-        .innerItem;
+    item = (item.parent as AbstractType).innerItem;
   }
 }
 
-/**
- * Split leftItem into two items
- * @param {Transaction} transaction
- * @param {Item} leftItem
- * @param {number} diff
- * @return {Item}
- *
- * @function
- * @private
- */
 Item splitItem(Transaction transaction, Item leftItem, int diff) {
   // create rightItem
   final client = leftItem.id.client;
@@ -163,7 +107,6 @@ Item splitItem(Transaction transaction, Item leftItem, int diff) {
   transaction.mergeStructs.add(rightItem);
   // update parent._map
   if (rightItem.parentSub != null && rightItem.right == null) {
-    /** @type {AbstractType<any>} */
     (rightItem.parent as AbstractType)
         .innerMap
         .set(rightItem.parentSub!, rightItem);
@@ -176,17 +119,6 @@ bool isDeletedByUndoStack(List<StackItem> stack, id) {
   return stack.any((element) => isDeleted(element.deletions, id));
 }
 
-/**
- * Redoes the effect of this operation.
- *
- * @param {Transaction} transaction The Yjs instance.
- * @param {Item} item
- * @param {Set<Item>} redoitems
- *
- * @return {Item|null}
- *
- * @private
- */
 Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems,
     DeleteSet itemsToDelete, bool ignoreRemoteMapChanges, UndoManager um) {
   final doc = transaction.doc;
@@ -196,21 +128,16 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems,
   if (redone != null) {
     return getItemCleanStart(transaction, redone);
   }
-  Item? parentItem =
-  /** @type {AbstractType<any>} */ (item.parent as AbstractType).innerItem;
-  /**
-   * @type {Item|null}
-   */
+  Item? parentItem = (item.parent as AbstractType).innerItem;
+
   Item? left;
-  /**
-   * @type {Item|null}
-   */
+
   Item? right;
   if (parentItem != null && parentItem.deleted == true) {
     if (parentItem.redone == null &&
         (!redoitems.contains(parentItem) ||
             redoItem(transaction, parentItem, redoitems, itemsToDelete,
-                ignoreRemoteMapChanges, um) ==
+                    ignoreRemoteMapChanges, um) ==
                 null)) {
       return null;
     }
@@ -219,9 +146,9 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems,
     }
   }
   // abstract type | content type
-  var parentType = parentItem == null
-      ? item.parent
-      : (parentItem.content as ContentType).type;
+
+  var parentType =
+      parentItem == null ? item.parent : getContentType(parentItem.content);
   if (item.parentSub == null) {
     // Is an array item. Insert at the old position
     left = item.left;
@@ -282,35 +209,22 @@ Item? redoItem(Transaction transaction, Item item, Set<Item> redoitems,
   }
   final nextClock = getState(store, ownClientID);
   final nextId = createID(ownClientID, nextClock);
-  final redoneItem = Item(
-      nextId,
-      left,
-      left?.lastId,
-      right,
-      right?.id,
-      parentType,
-      item.parentSub,
-      item.content.copy());
+  final redoneItem = Item(nextId, left, left?.lastId, right, right?.id,
+      parentType, item.parentSub, item.content.copy());
   item.redone = nextId;
   keepItem(redoneItem, true);
   redoneItem.integrate(transaction, 0);
   return redoneItem;
 }
 
-/**
- * Abstract class that represents any content.
- */
+AbstractType? getContentType(Object? content) {
+  if (content is ContentType) {
+    return content.type;
+  }
+  return null;
+}
+
 class Item extends AbstractStruct {
-  /**
-   * @param {ID} id
-   * @param {Item | null} left
-   * @param {ID | null} origin
-   * @param {Item | null} right
-   * @param {ID | null} rightOrigin
-   * @param {AbstractType<any>|ID|null} parent Is a type if integrated, is null if it is possible to copy parent from left or right, is ID before integration to search for it.
-   * @param {string | null} parentSub
-   * @param {AbstractContent} content
-   */
   Item(ID id, this.left, this.origin, this.right, this.rightOrigin, this.parent,
       this.parentSub, this.content)
       : info = content.isCountable() ? binary.BIT2 : 0,
@@ -421,7 +335,7 @@ class Item extends AbstractStruct {
       if (parentItem is GC) {
         this.parent = null;
       } else {
-        this.parent = ((parentItem as Item).content as ContentType).type;
+        this.parent = getContentType((parentItem as Item).content);
       }
     }
     return null;
@@ -443,7 +357,7 @@ class Item extends AbstractStruct {
 
     if (this.parent != null) {
       if ((this.left == null &&
-          (this.right == null || this.right!.left != null)) ||
+              (this.right == null || this.right!.left != null)) ||
           (this.left != null && this.left!.right != this.right)) {
         Item? left = this.left;
         Item? o;
@@ -451,15 +365,12 @@ class Item extends AbstractStruct {
         if (left != null) {
           o = left.right;
         } else if (this.parentSub != null) {
-          o = (this.parent as AbstractType)
-              .innerMap
-              .get(this.parentSub!);
+          o = (this.parent as AbstractType).innerMap.get(this.parentSub!);
           while (o != null && o.left != null) {
             o = o.left;
           }
         } else {
-          o = (this.parent as AbstractType)
-              .innerStart;
+          o = (this.parent as AbstractType).innerStart;
         }
         final conflictingItems = <Item>{};
         final itemsBeforeOrigin = <Item>{};
@@ -497,15 +408,12 @@ class Item extends AbstractStruct {
       } else {
         Item? r;
         if (this.parentSub != null) {
-          r = (this.parent as AbstractType)
-              .innerMap
-              .get(this.parentSub!);
+          r = (this.parent as AbstractType).innerMap.get(this.parentSub!);
           while (r != null && r.left != null) {
             r = r.left;
           }
         } else {
-          r = (this.parent as AbstractType)
-              .innerStart;
+          r = (this.parent as AbstractType).innerStart;
           (this.parent as AbstractType).innerStart = this;
         }
         this.right = r;
@@ -638,9 +546,9 @@ class Item extends AbstractStruct {
     final rightOrigin = this.rightOrigin;
     final parentSub = this.parentSub;
     final info = (this.content.getRef() & binary.BITS5) |
-    (origin == null ? 0 : binary.BIT8) | // origin is defined
-    (rightOrigin == null ? 0 : binary.BIT7) | // right origin is defined
-    (parentSub == null ? 0 : binary.BIT6); // parentSub is non-null
+        (origin == null ? 0 : binary.BIT8) | // origin is defined
+        (rightOrigin == null ? 0 : binary.BIT7) | // right origin is defined
+        (parentSub == null ? 0 : binary.BIT6); // parentSub is non-null
     encoder.writeInfo(info);
     if (origin != null) {
       encoder.writeLeftID(origin);
@@ -681,7 +589,7 @@ dynamic readItemContent(AbstractUpdateDecoder decoder, int info) =>
     contentRefs[info & binary.BITS5](decoder);
 
 final contentRefs = [
-      () {
+  () {
     throw Exception('Unexpected case');
   }, // GC is not ItemContent
   readContentDeleted, // 1

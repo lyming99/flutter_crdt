@@ -7,8 +7,6 @@ import 'package:flutter_crdt/utils/update_encoder.dart';
 import "package:flutter_crdt/lib0/decoding.dart" as decoding;
 import "package:flutter_crdt/lib0/encoding.dart" as encoding;
 import 'package:flutter_crdt/lib0/binary.dart' as binary;
-import '../structs/content_deleted.dart';
-import '../structs/content_type.dart';
 import '../structs/gc.dart';
 import '../structs/item.dart';
 import '../structs/skip.dart';
@@ -258,7 +256,7 @@ Uint8List mergeUpdatesV2(List<Uint8List> updates,
     lazyStructDecoders =
         lazyStructDecoders.where((dec) => dec.curr != null).toList();
     lazyStructDecoders.sort(
-        /** @type {function(any,any):number} */
+        
         (dec1, dec2) {
       if (dec1.curr!.id.client == dec2.curr!.id.client) {
         int clockDiff = dec1.curr!.id.clock - dec2.curr!.id.clock;

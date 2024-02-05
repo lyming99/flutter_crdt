@@ -14,10 +14,6 @@ import 'package:flutter_crdt/utils/y_event.dart';
 import 'package:flutter_crdt/y_crdt_base.dart';
 
 const globalTransact = transact;
-/**
- * @module Y
- */
-
 
 final _random = math.Random();
 final _uuid = Uuid();
@@ -63,7 +59,7 @@ class Doc extends Observable<String> {
     final item = this.item;
     if (item != null && !this.shouldLoad) {
       globalTransact(
-          /** @type {any} */
+          
           (item.parent as dynamic).doc as Doc, (transaction) {
         transaction.subdocsLoaded.add(this);
       }, null, true);
@@ -106,7 +102,7 @@ class Doc extends Observable<String> {
         final t = typeConstructor();
         t.innerMap = type.innerMap;
         type.innerMap.forEach(
-            /** @param {Item?} n */
+            
             (_, n) {
           Item? item = n;
           for (; item != null; item = item.left) {

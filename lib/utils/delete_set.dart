@@ -2,11 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_crdt/lib0/decoding.dart' as decoding;
 import 'package:flutter_crdt/lib0/encoding.dart' as encoding;
-// import * as array from "lib0/array.js";
-// import * as math from "lib0/math.js";
-// import * as map from "lib0/map.js";
-// import * as encoding from "lib0/encoding.js";
-// import * as decoding from "lib0/decoding.js";
 
 import 'package:flutter_crdt/structs/abstract_struct.dart';
 import 'package:flutter_crdt/structs/item.dart';

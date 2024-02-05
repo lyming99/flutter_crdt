@@ -215,7 +215,7 @@ class UpdateDecoderV2 extends DSDecoderV2 implements AbstractUpdateDecoder {
 
   @override
   int readInfo() {
-    return /** @type {number} */ this.infoDecoder.read() as int;
+    return  this.infoDecoder.read() as int;
   }
 
   @override

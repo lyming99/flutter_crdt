@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter_crdt/structs/abstract_struct.dart';
-import 'package:flutter_crdt/structs/gc.dart';
 import 'package:flutter_crdt/structs/item.dart';
 import 'package:flutter_crdt/utils/id.dart';
 import 'package:flutter_crdt/utils/transaction.dart';
@@ -112,21 +111,20 @@ Item getItemCleanStart(Transaction transaction, ID id) {
 Item? getItemCleanEnd(Transaction transaction, StructStore store, ID id) {
   final structs = store.clients.get(id.client)!;
   final index = findIndexSS(structs, id.clock);
-  if (structs[index] is GC) {
-    return null;
+  final struct = structs[index];
+  if (struct is Item) {
+    if (id.clock != struct.id.clock + struct.length - 1) {
+      structs.insert(index + 1,
+          splitItem(transaction, struct, id.clock - struct.id.clock + 1));
+    }
+    return struct;
   }
-  final struct = structs[index] as Item;
-  if (id.clock != struct.id.clock + struct.length - 1 && struct is! GC) {
-    structs.insert(index + 1,
-        splitItem(transaction, struct, id.clock - struct.id.clock + 1));
-  }
-  return struct;
+  return null;
 }
 
 void replaceStruct(
     StructStore store, AbstractStruct struct, AbstractStruct newStruct) {
-  final structs =
-      /** @type {List<GC|Item>} */ (store.clients.get(struct.id.client))!;
+  final structs = (store.clients.get(struct.id.client))!;
   structs[findIndexSS(structs, struct.id.clock)] = newStruct;
 }
 

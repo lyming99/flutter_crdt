@@ -1,63 +1,32 @@
-// import {
-//   AbstractUpdateDecoder,
-//   AbstractUpdateEncoder,
-//   Transaction,
-//   Item,
-//   StructStore, // eslint-disable-line
-// } from "../internals.js";
-
 import 'package:flutter_crdt/structs/item.dart';
 import 'package:flutter_crdt/utils/update_decoder.dart';
 
-/**
- * @private
- */
 class ContentString implements AbstractContent {
-  /**
-   * @param {string} str
-   */
+  
   ContentString(this.str);
-  /**
-     * @type {string}
-     */
+  
   String str;
 
-  /**
-   * @return {number}
-   */
   @override
   getLength() {
     return this.str.length;
   }
 
-  /**
-   * @return {List<any>}
-   */
   @override
   getContent() {
     return this.str.split("");
   }
 
-  /**
-   * @return {boolean}
-   */
   @override
   isCountable() {
     return true;
   }
 
-  /**
-   * @return {ContentString}
-   */
   @override
   copy() {
     return ContentString(this.str);
   }
 
-  /**
-   * @param {number} offset
-   * @return {ContentString}
-   */
   @override
   splice(offset) {
     final right = ContentString(this.str.substring(offset));
@@ -76,10 +45,7 @@ class ContentString implements AbstractContent {
     return right;
   }
 
-  /**
-   * @param {ContentString} right
-   * @return {boolean}
-   */
+  
   @override
   mergeWith(right) {
     if (right is ContentString) {
@@ -90,45 +56,28 @@ class ContentString implements AbstractContent {
     }
   }
 
-  /**
-   * @param {Transaction} transaction
-   * @param {Item} item
-   */
+  
   @override
   integrate(transaction, item) {}
-  /**
-   * @param {Transaction} transaction
-   */
+  
   @override
   delete(transaction) {}
-  /**
-   * @param {StructStore} store
-   */
+  
   @override
   gc(store) {}
-  /**
-   * @param {AbstractUpdateEncoder} encoder
-   * @param {number} offset
-   */
+  
   @override
   write(encoder, offset) {
     encoder.writeString(offset == 0 ? this.str : this.str.substring(offset));
   }
 
-  /**
-   * @return {number}
-   */
+  
   @override
   getRef() {
     return 4;
   }
 }
 
-/**
- * @private
- *
- * @param {AbstractUpdateDecoder} decoder
- * @return {ContentString}
- */
+
 ContentString readContentString(AbstractUpdateDecoder decoder) =>
     ContentString(decoder.readString());

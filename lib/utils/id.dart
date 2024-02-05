@@ -1,8 +1,5 @@
 import 'package:flutter_crdt/lib0/decoding.dart' as decoding;
 import 'package:flutter_crdt/lib0/encoding.dart' as encoding;
-// import * as decoding from 'lib0/decoding.js'
-// import * as encoding from 'lib0/encoding.js'
-// import * as error from 'lib0/error.js'
 
 import 'package:flutter_crdt/types/abstract_type.dart';
 
